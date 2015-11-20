@@ -1,0 +1,376 @@
+---
+title: "Affymetrix"
+author: "Mark Dunning"
+date: "20/11/2015"
+output: html_document
+---
+
+
+Walkthrough of example dataset pointing out various QA steps as they occur
+
+# Technology overview
+
+
+
+# Example analysis in R
+
+## The estrogen dataset
+
+The data for this section are described the `estrogen` data package
+
+```{r echo=FALSE,cache=TRUE}
+datadir <- system.file("extdata", package="estrogen")
+dir.create("estrogen")
+sapply(list.files(datadir), function(x) file.copy(paste(datadir,x,sep="/"),"estrogen"))
+```
+
+
+Raw data for Affymetrix arrays are usually stored in `.cel` format. The cel files for the example experiement are stored in the `estrogen` directory
+
+
+We read the targets file
+```{r message=FALSE}
+library(affy)
+targetsFile <- "estrogen/estrogen.txt"
+pd <- read.AnnotatedDataFrame(targetsFile,header=TRUE,sep="",row.names=1)
+pData(pd)
+```
+
+
+```{r,message=FALSE}
+
+raw <-ReadAffy(celfile.path = "estrogen", filenames=rownames(pData(pd)),phenoData = pd)
+raw
+```
+
+1) What type of Affy array is this
+2) How many features?
+3) How many samples?
+
+We can look at the images of the array surface. Ocassionally this can reveal [http://plmimagegallery.bmbolstad.com/](interesting / unusual artefacts)
+
+If you want to look at the array image, we can use the following code
+
+```{r}
+bad <- ReadAffy(celfile.path = "estrogen/",filenames="bad.cel")
+image(bad)
+```
+
+Try out some images for this dataset
+
+```{r eval=FALSE}
+par(mfrow=c(2,4))
+image(raw[,1])
+image(raw[,2])
+image(raw[,3])
+image(raw[,4])
+image(raw[,5])
+image(raw[,6])
+image(raw[,7])
+image(raw[,8])
+```
+
+- *Do you see any problems?
+
+The first diagnostic plot we will meet is the "boxplot"
+
+```{r echo=FALSE}
+df <- data.frame(x=rnorm(20),y=rnorm(20,2,2))
+boxplot(df)
+```
+
+In Bioconductor, you will usually find that package authors have created shortcuts to allow complicated data types to be visualised with common functions.
+
+```{r}
+boxplot(raw,col="red",las=2)
+```
+
+* What do you notice from this plot?*
+
+## Perfect-Match and Mismatch probes
+
+
+```{r}
+par(mfrow=c(2,1))
+hist(log2(pm(raw[,1])),breaks=100,col="steelblue",main="PM",xlim=c(4,14))
+hist(log2(mm(raw[,1])),breaks=100,col="steelblue",main="MM",xlim=c(4,14))
+
+```
+
+## Probe-level Linear Models
+
+```{r}
+library(affyPLM)
+plmset <- fitPLM(raw)
+NUSE(plmset,las=2)
+RLE(plmset,las=2)
+```
+
+
+## Normalisation
+
+
+- We want to be observing *biological* and not *technical* variation
+- We wouldn't expect such wholesale changes on a per-sample basis
+- Easy option would to scale values for each array to median level
+```{r echo=FALSE,warning=FALSE,fig.height=4,fig.width=8}
+
+boxplot(raw)
+
+x <- raw
+         tmp <- unlist(indexProbes(x, which="both"))
+         tmp <- tmp[seq(1, length(tmp), len = 5000)]
+         df <- data.frame(log2(intensity(x)[tmp, ]))
+        med <- median(as.matrix(df))
+
+abline(h=med,lty=2,col="red")
+```
+
+## Simple scaling
+
+- Genes on array 2 are on average `r median(df[,2]) - med` higher than the global median, so subtract `r median(df[,2]) - med` from each gene
+- Genes on array 8 are on average `r abs(median(df[,8]) - med)` lower than the global median, so add `r abs(median(df[,8]) - med)` to each gene
+- etc
+
+
+## Non-linear effects
+
+The *MA-plot* is commonly-used in microarray analysis to 
+
+```{r}
+mva.pairs(pm(raw)[,1:2])
+```
+
+
+## Quantile normalisation
+
+This is arguably the most-popular normalisation method available. Consider the following matrix of values to be normalised
+
+```{r echo=FALSE}
+df <- data.frame(Array1 = c(1,3,9,2,4), Array2 = c(3,4,2,1,9), Array3 = c(9,1,5,7,6))
+rownames(df) <- LETTERS[1:nrow(df)]
+df
+```
+Genes A, B, C, D and E measured on three arrays
+
+
+
+Determine ranks of each column
+```{r echo=FALSE}
+df
+```
+
+```{r echo=FALSE}
+rks <- apply(df, 2, function(x) paste("Rank",rank(x,ties.method="min"),sep=""))
+rks
+```
+
+
+
+Sort each column Largest...Smallest
+
+Original data
+```{r echo=FALSE}
+df
+```
+***
+Sorted data
+```{r echo=FALSE}
+apply(df, 2,sort)
+```
+Then calculate target distribution by averaging the sorted rows
+```{r echo=FALSE} 
+target <- round(rowMeans(apply(df, 2,sort)),3)
+names(target) <- paste("Rank", 1:length(target),sep="")
+target
+```
+
+
+
+
+Go back to the rank matrix
+
+```{r echo=FALSE}
+rks
+
+```
+Substitue with values from the target distribution
+```{r echo=FALSE}
+target
+```
+
+```{r echo=FALSE}
+rks[,1] <- gsub("Rank1",target["Rank1"],rks[,1])
+rks
+```
+
+
+
+Go back to the rank matrix
+
+```{r echo=FALSE}
+rks
+
+```
+
+Substitue with values from the target distribution
+
+```{r echo=FALSE}
+target
+```
+
+```{r echo=FALSE}
+rks[,1] <- gsub("Rank2",target["Rank2"],rks[,1])
+rks
+```
+
+
+
+
+Go back to the rank matrix
+
+```{r echo=FALSE}
+rks
+
+```
+Substitue with values from the target distribution
+```{r echo=FALSE}
+target
+```
+
+```{r echo=FALSE}
+rks[,1] <- gsub("Rank3",target["Rank3"],rks[,1])
+rks
+```
+
+
+Go back to the rank matrix
+
+```{r echo=FALSE}
+rks
+
+```
+Substitue with values from the target distribution
+```{r echo=FALSE}
+target
+```
+
+```{r echo=FALSE}
+rks[,1] <- gsub("Rank4",target["Rank4"],rks[,1])
+rks
+```
+
+
+Go back to the rank matrix
+
+```{r echo=FALSE}
+rks
+
+```
+Substitue with values from the target distribution
+```{r echo=FALSE}
+target
+```
+
+```{r echo=FALSE}
+rks[,1] <- gsub("Rank5",target["Rank5"],rks[,1])
+rks
+```
+
+
+We then repeat to get the normalized matrix
+```{r echo=FALSE}
+for(i in 1:3){
+rks[,i] <- gsub("Rank1",target["Rank1"],rks[,i])
+rks[,i] <- gsub("Rank2",target["Rank2"],rks[,i])
+rks[,i] <- gsub("Rank3",target["Rank3"],rks[,i])
+rks[,i] <- gsub("Rank4",target["Rank4"],rks[,i])
+rks[,i] <- gsub("Rank5",target["Rank5"],rks[,i])
+}
+rks <- as.data.frame(rks)
+rownames(rks) <- rownames(df)
+```
+
+Original data
+```{r echo=FALSE}
+df
+```
+Normalised data
+
+```{r echo=FALSE}
+rks
+```
+
+
+##Final Code
+
+```{r}
+df <- data.frame(Array1 = c(1,3,9,2,4), 
+                 Array2 = c(3,4,2,1,9), Array3 = c(9,1,5,7,6))
+rownames(df) <- LETTERS[1:nrow(df)]
+rks <- apply(df, 2, function(x) paste("Rank",
+      rank(x,ties.method="min"),sep=""))
+target <- round(rowMeans(apply(df, 2,sort)),3)
+names(target) <- paste("Rank", 1:length(target),sep="")
+for(i in 1:ncol(df)){
+  for(nm in names(target)){
+    rks[,i] <- gsub(nm,target[nm],rks[,i])  
+      }
+}
+norm <- as.data.frame(rks)
+```
+
+
+##Effect of quantile normalisation
+
+Caveats
+
+- Distributions of samples are expected to be the same
+- Majority of genes do not change between groups
+
+## Other normalisation procedures
+
+- loess or splines
+
+## Normalising the Estrogen dataset
+
+rma incorporates quantile normalisation, along with a background correction
+
+The result is an `ExpressionSet`, which is a ubiquitous object in Biooconductor for storing high-throughput data
+
+```{r}
+eset <- rma(raw)
+eset
+```
+
+```{r}
+head(exprs(eset))
+```
+
+```{r}
+head(pData(eset))
+```
+
+
+```{r}
+boxplot(exprs(eset))
+```
+
+```{r}
+mva.pairs(exprs(eset)[,1:4])
+```
+
+## Automated QC
+
+```{r}
+library(arrayQualityMetrics)
+arrayQualityMetrics(raw)
+```
+
+
+## Summary
+
+- Affy data come in `.cel` files that can be imported with the `affy` package
+- 
+
+

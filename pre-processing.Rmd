@@ -1,0 +1,314 @@
+---
+title: "Pre-processing"
+author: "Mark Dunning"
+date: "20/11/2015"
+output: html_document
+---
+
+# Pre-processing concerns for Microarray data
+
+## Image-Processing
+
+
+
+
++ Calculate foreground & background
++ Background correct
++ The resulting values are found in the text files
++ The steps can be repeated in beadarray
++ *Usually we start with these values*
+
+![imageproc](images/imageprocessing.png)
+
+
+# Quality Assessment
+
+## Spatial artefacts
+
+
+Sometimes obvious artefacts can be apparent on the TIFF image itself
+
+```{r}
+library(affy)
+setwd(system.file("extdata",package="estrogen"))
+badc <- ReadAffy("bad.cel")
+image(badc)
+```
+
+[http://plmimagegallery.bmbolstad.com/](A gallery of interesting / unusual artefacts)
+
+***BASH*** method for Illumina
+
+
+## Typical plots
+
+- Boxplots of array distributions
+
+```{r echo=FALSE,warning=FALSE,fig.height=4,fig.width=8,cache=TRUE,message=FALSE}
+library(estrogen)
+suppressPackageStartupMessages(library(affy))
+targ <- paste0(system.file("extdata",package = "estrogen"),"/estrogen.txt")
+pd <- read.AnnotatedDataFrame(targ,header=TRUE,sep="",row.names=1)
+rawdata <- ReadAffy(filenames=paste(system.file("extdata",package = "estrogen"),rownames(pData(pd)),sep="/"),phenoData=pd)
+boxplot(rawdata[,1:4])
+```
+
+## Typical plots 
+
+- MA plots
+
+```{r echo=FALSE,fig.height=4,fig.width=8}
+
+suppressPackageStartupMessages(library(affyPLM))
+par(mfrow=c(1,3))
+MAplot(rawdata[,1:3])
+```
+
+
+##Typical plots
+
+- Density plots
+
+```{r echo=FALSE,warning=FALSE,cache=TRUE}
+
+eset <- expresso(rawdata, bgcorrect.method="rma",
+                   normalize.method="constant",pmcorrect.method="pmonly",
+                   summary.method="avgdiff")
+
+plotDensity(log2(exprs(eset)))
+```
+
+
+## Normalisation
+
+- We want to be observing *biological* and not *technical* variation
+- We wouldn't expect such wholesale changes on a per-sample basis
+- Easy option would to scale values for each array to median level
+```{r echo=FALSE,warning=FALSE,fig.height=4,fig.width=8}
+
+boxplot(rawdata)
+
+x <- rawdata
+         tmp <- unlist(indexProbes(x, which="both"))
+         tmp <- tmp[seq(1, length(tmp), len = 5000)]
+         df <- data.frame(log2(intensity(x)[tmp, ]))
+        med <- median(as.matrix(df))
+
+abline(h=med,lty=2,col="red")
+```
+
+## Simple scaling
+
+- Genes on array 2 are on average `r median(df[,2]) - med` higher than the global median, so subtract `r median(df[,2]) - med` from each gene
+- Genes on array 8 are on average `r abs(median(df[,8]) - med)` lower than the global median, so add `r abs(median(df[,8]) - med)` to each gene
+- etc
+
+
+## Non-linear effects
+
+- We often compare to an *average* array which is the result of averaging each gene
+
+
+- Different effects can be seen when comparing to this theoretical array
+
+
+## Quantile normalisation
+Consider the following matrix of values to be normalised
+
+```{r echo=FALSE}
+df <- data.frame(Array1 = c(1,3,9,2,4), Array2 = c(3,4,2,1,9), Array3 = c(9,1,5,7,6))
+rownames(df) <- LETTERS[1:nrow(df)]
+df
+```
+Genes A, B, C, D and E measured on three arrays
+
+## Quantile normalisation
+
+Determine ranks of each column
+```{r echo=FALSE}
+df
+```
+
+```{r echo=FALSE}
+rks <- apply(df, 2, function(x) paste("Rank",rank(x,ties.method="min"),sep=""))
+rks
+```
+
+##Quantile normalisation
+
+Sort each column Largest...Smallest
+
+Original data
+```{r echo=FALSE}
+df
+```
+***
+Sorted data
+```{r echo=FALSE}
+apply(df, 2,sort)
+```
+Then calculate target distribution by averaging the sorted rows
+```{r echo=FALSE} 
+target <- round(rowMeans(apply(df, 2,sort)),3)
+names(target) <- paste("Rank", 1:length(target),sep="")
+target
+```
+
+
+##Quantile normalisation
+
+Go back to the rank matrix
+
+```{r echo=FALSE}
+rks
+
+```
+Substitue with values from the target distribution
+```{r echo=FALSE}
+target
+```
+
+```{r echo=FALSE}
+rks[,1] <- gsub("Rank1",target["Rank1"],rks[,1])
+rks
+```
+
+##Quantile normalisation
+
+Go back to the rank matrix
+
+```{r echo=FALSE}
+rks
+
+```
+Substitue with values from the target distribution
+```{r echo=FALSE}
+target
+```
+
+```{r echo=FALSE}
+rks[,1] <- gsub("Rank2",target["Rank2"],rks[,1])
+rks
+```
+
+
+##Quantile normalisation
+
+Go back to the rank matrix
+
+```{r echo=FALSE}
+rks
+
+```
+Substitue with values from the target distribution
+```{r echo=FALSE}
+target
+```
+
+```{r echo=FALSE}
+rks[,1] <- gsub("Rank3",target["Rank3"],rks[,1])
+rks
+```
+
+##Quantile normalisation
+
+Go back to the rank matrix
+
+```{r echo=FALSE}
+rks
+
+```
+Substitue with values from the target distribution
+```{r echo=FALSE}
+target
+```
+
+```{r echo=FALSE}
+rks[,1] <- gsub("Rank4",target["Rank4"],rks[,1])
+rks
+```
+
+##Quantile normalisation
+
+Go back to the rank matrix
+
+```{r echo=FALSE}
+rks
+
+```
+Substitue with values from the target distribution
+```{r echo=FALSE}
+target
+```
+
+```{r echo=FALSE}
+rks[,1] <- gsub("Rank5",target["Rank5"],rks[,1])
+rks
+```
+
+##Quantile normalisation
+We then repeat to get the normalized matrix
+```{r echo=FALSE}
+for(i in 1:3){
+rks[,i] <- gsub("Rank1",target["Rank1"],rks[,i])
+rks[,i] <- gsub("Rank2",target["Rank2"],rks[,i])
+rks[,i] <- gsub("Rank3",target["Rank3"],rks[,i])
+rks[,i] <- gsub("Rank4",target["Rank4"],rks[,i])
+rks[,i] <- gsub("Rank5",target["Rank5"],rks[,i])
+}
+rks <- as.data.frame(rks)
+rownames(rks) <- rownames(df)
+```
+
+Original data
+```{r echo=FALSE}
+df
+```
+Normalised data
+
+```{r echo=FALSE}
+rks
+```
+
+
+##Final Code
+
+```{r}
+df <- data.frame(Array1 = c(1,3,9,2,4), 
+                 Array2 = c(3,4,2,1,9), Array3 = c(9,1,5,7,6))
+rownames(df) <- LETTERS[1:nrow(df)]
+rks <- apply(df, 2, function(x) paste("Rank",
+      rank(x,ties.method="min"),sep=""))
+target <- round(rowMeans(apply(df, 2,sort)),3)
+names(target) <- paste("Rank", 1:length(target),sep="")
+for(i in 1:ncol(df)){
+  for(nm in names(target)){
+    rks[,i] <- gsub(nm,target[nm],rks[,i])  
+      }
+}
+norm <- as.data.frame(rks)
+```
+
+
+##Effect of quantile normalisation
+
+Caveats
+
+- Distributions of samples are expected to be the same
+- Majority of genes do not change between groups
+
+```{r echo=FALSE,warning=FALSE,fig.height=4,fig.width=8,message=FALSE}
+
+x <- rawdata
+         tmp <- unlist(indexProbes(x, which="both"))
+         tmp <- tmp[seq(1, length(tmp), len = 5000)]
+         df <- data.frame(log2(intensity(x)[tmp, ]))
+        med <- median(as.matrix(df))
+par(mfrow=c(1,2))
+boxplot(df,main="Before")
+suppressPackageStartupMessages(library(limma))
+boxplot(normalizeQuantiles(df),main="After")
+```
+
+
+
