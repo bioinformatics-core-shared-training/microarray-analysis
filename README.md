@@ -5,15 +5,17 @@ Materials on the analysis of microarray expression data; focus on re-analysis of
 ## Day one
 
 - Intro to microarray technology (Illumina / affy) & Data analysis
-    + probes, targets
-    + Illumina
-    + Affy
-    + Diagnostic plots
-    + Quality control / normalisation
-    + Bioconductor
+    + probes, target terminology
+    + Bioconductor introduction
     
 - Prac; 1st look at microarray data and R refresher
     + Existing Bioc practical
+    
+-Specific technologies
+    + Affy workflow
+    + Illumina workflow
+    + Diagnostic plots
+    + Quality control / normalisation
     
 - Linear models and statistics for differential expression
 
@@ -21,12 +23,10 @@ Materials on the analysis of microarray expression data; focus on re-analysis of
 
 - Practical on differential expression
 
-- Advanced aspects
+- Advanced aspects of analysis
     + Annotation
     + Batch effects
     
 - Clustering, PCA, (survival?)
 
 - Existing prac
-
-- Getting data from TCGA / cbioportal (?)
