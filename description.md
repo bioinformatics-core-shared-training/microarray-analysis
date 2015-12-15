@@ -8,6 +8,7 @@ It is now widely-accepted that Next-Generation Sequencing technologies have suce
 ## Aims: During the course you will learn about
 
 - Exploratory data analysis techniques for high-throughput data
+- Workflows for the analysis of Illumina and Affymetrix gene expession data
 - Normalisation of gene expression data
 - Differential expression (DE) analysis using linear-modelling techniques
 - Importing data from GEO into R
@@ -17,7 +18,7 @@ It is now widely-accepted that Next-Generation Sequencing technologies have suce
 
 - Import gene expression datasets from GEO into R
 - Assess the quality of a dataset in a repository
-- Spot, and correct for, batch effects
+- Identify, and correct for, batch effects
 - Peform a standard DE analysis to get a ranked list of genes
 - Use un-supervised methods to explore a dataset
 - Interrogate particular genes of interest
