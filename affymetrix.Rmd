@@ -364,7 +364,7 @@ mva.pairs(exprs(eset)[,1:4])
 
 ```{r}
 library(arrayQualityMetrics)
-arrayQualityMetrics(raw)
+arrayQualityMetrics(eset)
 ```
 
 
