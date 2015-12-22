@@ -5,6 +5,11 @@ date: "20/11/2015"
 output: html_document
 ---
 
+```{r echo=FALSE,message=FALSE}
+library(beadarray)
+```
+
+
 # Illumina
 
 Single-channel microarrays  
@@ -92,12 +97,16 @@ We could use ***BASH*** which we don't cover today
 
 Now we can summarise the data into a more-usable form
 
-* outlier calculation*
+* outlier calculation?*
 
-```{r cache=TRUE}
+```{r cache=TRUE,echo=FALSE}
 eset.ill <- summarize(data)
+```
+
+```{r}
 eset.ill
 ```
+
 
 The object should seem familiar from the previous section on Affymetrix
 
