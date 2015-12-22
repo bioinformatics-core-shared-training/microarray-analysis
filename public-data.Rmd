@@ -1,0 +1,158 @@
+---
+title: "Importing publicly available data"
+author: "Mark Dunning"
+date: "22 December 2015"
+output: html_document
+---
+
+
+# Bioconductor data packages
+
+The bioconductor project includes a collection of [Experimental Data](http://bioconductor.org/packages/release/BiocViews.html#___ExperimentData) packages that can be downloaded and installed in the same way as regular software packages in Bioconductor
+
+## Example data for a package
+
+The size limit for a new package submission is quite restrictive, so authors often have to submit example datasets separately. 
+e.g. The [beadrrayExampleData](http://bioconductor.org/packages/release/data/experiment/html/beadarrayExampleData.html) has example data which can be used to test examples from the beadarray package
+
+
+## Supplementary data for a paper
+
+e.g. from the [Markowetz lab @ CI](http://bioconductor.org/packages/release/data/experiment/html/Fletcher2013a.html). This package not only has the data, but R scripts to reproduce the analysis in the paper.
+
+## Curated datasets for meta-analysis
+
+Several breast cancer datasets have been curated for use with the genefu package; which has many useful functions for classication of breast cancer
+
+- breastCancerNKI
+- breastCancerVDX
+
+also
+
+- curateBreastData
+
+# Data from Gene Expression Omnibus (GEO)
+
+## Using the GEOquery package
+
+Can search from GEO [home page](http://www.ncbi.nlm.nih.gov/geo/) or using this [Shiny app](https://zhiji.shinyapps.io/GEOsearch) to get a dataset ID. **GSE....**.
+
+With this identifier, we can use the GEOquery Bioconductor package
+
+```{r message=FALSE}
+library(GEOquery)
+```
+
+
+
+Lets say we have identified a dataset which has breast cancer cell lines. The web page describing these data is [here](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE3156). The main function we need to use is `getGEO`. This downloads the *series* file for the dataset and parses the data in this file into a format that is compatible with Bioconductor. 
+
+```{r eval=FALSE}
+mydata <- getGEO("GSE3156")
+mydata
+```
+
+We can choose to download to disk first. On the [page](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE3156) for the dataset you should see there is a link to the **Series Matrix File(s)**. You can copy and paste this link into R and use the `download.file` function to get data from the URL to disk. GEOquery is then able to read from this file in future using the filename argument. 
+
+```{r cache=TRUE}
+remotefile <- 'ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE3nnn/GSE3156/matrix/GSE3156_series_matrix.txt.gz'
+download.file(remotefile, destfile="GSE3156_series_matrix.txt.gz")
+mydata <- getGEO(filename="GSE3156_series_matrix.txt.gz")
+mydata
+```
+
+The structure of the `mydata` object should be quite familiar to you. The expression values can be retrieved by the `exprs` function. Here, we just print the first 5 rows and 5 columns. In total there are `r nrow(mydata)` rows (genes) and `r ncol(mydata)` columns (samples)
+
+```{r}
+exprs(mydata)[1:5,1:5]
+```
+
+The annotation for the features can be retrieved by using `fData`. Because of the strict submission process, all the rows of this feature matrix are in the same order as the expression matrix; which greatly-simplifies further analysis
+
+```{r}
+fData(mydata)[1:5,1:5]
+colnames(fData(mydata))
+all(rownames(fData(mydata)) == rownames(exprs(mydata)))
+```
+
+```{r}
+pData(mydata)[1:5,1:5]
+colnames(pData(mydata))
+```
+
+```{r}
+pd <- pData(mydata)
+View(pd)
+```
+
+
+# Data from ArrayExpress
+
+```{r eval=FALSE}
+library(ArrayExpress)
+sets <- queryAE(keywords = "breast+cancer",species="homo+sapiens")
+bclines <- getAE("E-GEOD-69017")
+mydata <- ae2bioc(bclines)
+```
+
+
+
+# Data from TCGA
+
+# Data from cbioportal
+
+The R package to query cbioportal data is available through **CRAN** rather than Bioconductor
+```{r eval=FALSE}
+install.packages("cgdsr")
+```
+
+```{r}
+library(cgdsr)
+mycgds = CGDS("http://www.cbioportal.org/public-portal/")
+test(mycgds)
+```
+
+Lets say we're interested in Breast cancer from TCGA
+
+```{r}
+studies <- getCancerStudies(mycgds)
+studies[15,]
+mystudy <- studies[15,1]
+```
+
+What cases to use? Each study will have different list of cases
+```{r}
+caselist <- getCaseLists(mycgds, mystudy)
+caselist[1:10,1:3]
+```
+
+What profiles are available?
+
+```{r}
+datatypes <- getGeneticProfiles(mycgds,mystudy)
+head(datatypes)
+```
+
+Now lets get the genetic alterations for the sample set of cases
+
+```{r}
+profile <- getProfileData(mycgds, genes=c("ESR1"), datatypes[2,1], caselist[2,1])
+```
+
+```{r}
+clincvars <- getClinicalData(mycgds, caselist[2,1])
+head(clincvars)
+```
+
+```{r}
+boxplot(profile[,1]~ clincvars$ER.STATUS)
+```
+
+```{r}
+clincvars <- clincvars[match(rownames(profile),rownames(clincvars)),]
+```
+
+
+```{r}
+boxplot(profile[,1]~ clincvars$ER.STATUS)
+```
