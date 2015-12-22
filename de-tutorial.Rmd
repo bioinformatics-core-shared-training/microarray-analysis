@@ -1,0 +1,154 @@
+---
+title: "Differential Expression Tutorial"
+author: "Mark Dunning"
+date: "22 December 2015"
+output: html_document
+---
+
+# Importing the data
+
+The data from this experiment comprises nine paired tumor/normal colon tissues on Illumina HT12\_v3 gene expression Beadchips. These data were generated to inform a comparison of technologies for microRNA profiling. However, we will only use the mRNA data here. 
+
+
+```{r echo=FALSE,message=FALSE}
+library(GEOquery)
+library(limma)
+```
+
+
+```{r cache=TRUE}
+library(GEOquery)
+library(limma)
+url <- "ftp://ftp.ncbi.nih.gov/pub/geo/DATA/SeriesMatrix/GSE33126/"
+filenm <- "GSE33126_series_matrix.txt.gz"
+if(!file.exists("GSE33126_series_matrix.txt.gz")) download.file(paste(url, filenm, sep=""), destfile=filenm)
+gse <- getGEO(filename=filenm)
+gse
+```
+
+```{r}
+head(exprs(gse))
+```
+
+- Do the data look to be normalised?
+
+
+```{r}
+exprs(gse) <- log2(exprs(gse))
+boxplot(exprs(gse),outline=FALSE)
+```
+
+Inspect the clinical variables
+
+- What column has the information about whether is sample is a tumour or normal?
+- How many do we have in each group?
+
+```{r}
+pData(gse)[1:5,]
+pd <- pData(gse)
+View(pd)
+SampleGroup <- pd$source_name_ch1
+table(SampleGroup)
+```
+
+# Simple t-tests
+
+For completeness, we note that t-statistics and corresponding p-values can be generated quickly using the `genefilter` package. 
+
+```{r}
+library(genefilter)
+destats <- rowttests(exprs(gse),SampleGroup)
+head(destats)
+```
+
+- Can we remember the drawbacks of this approach?
+
+# The linear model approach
+
+Create a design matrix 
+
+```{r}
+design <- model.matrix(~0+SampleGroup)
+design
+colnames(design) <- c("Normal","Tumour")
+```
+
+The `lmFit` funcion is used to fit the model to the data. The output has various components. How 
+
+```{r}
+fit <- lmFit(exprs(gse), design)
+names(fit)
+dim(fit$coefficients)
+head(fit$coefficients)
+```
+
+Now we define the contrast
+
+```{r}
+contrasts <- makeContrasts(Tumour - Normal, levels=design)
+fit2 <- contrasts.fit(fit, contrasts)
+head(fit2$coeff)
+```
+
+Finally, apply the *empirical Bayes'* step
+
+```{r}
+fit2 <- eBayes(fit2)
+fit2
+```
+
+We usually get our first look at the results by using the `topTable` command
+
+```{r}
+topTable(fit2)
+```
+
+The columns are as follows;
+
+- logFC
+- AveExpr
+- t
+- P.Value
+- adj.P.Val
+- B
+
+# Including annotation
+
+```{r}
+anno <- fData(gse)
+head(anno)
+anno <- anno[,c("Symbol","Entrez_Gene_ID","Chromosome","Cytoband")]
+fit2$genes <- anno
+topTable(fit2)
+```
+
+# Diagnostic checks
+
+At this point it is useful to take stock and do some diagnostic checks
+
+```{r}
+dotchart(exprs(gse)["ILMN_1704294",])
+```
+
+```{r}
+boxplot(exprs(gse)["ILMN_1704294",]~SampleGroup)
+```
+
+How many genes are DE?
+
+```{r}
+decideTests(fit2)
+table(decideTests(fit2))
+```
+
+
+```{r}
+volcanoplot(fit2)
+```
+
+# Exporting the results
+
+```{r}
+write.fit(fit2, file = "de-results.txt",adjust="BH")
+```
+
