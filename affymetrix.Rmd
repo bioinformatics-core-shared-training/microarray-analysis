@@ -5,20 +5,45 @@ date: "20/11/2015"
 output: html_document
 ---
 
-
-Walkthrough of example dataset pointing out various QA steps as they occur
+![affy](https://upload.wikimedia.org/wikipedia/commons/2/22/Affymetrix-microarray.jpg)
 
 # Technology overview
 
+Affymetrix microarrays are a popular commercial platform available for a wide range of
+genomics applications (gene expression profiling, SNP genotyping, ChIP-chip analysis etc.)
+in different species.
+The main distinction between Affymetrix and other array technologies is the use of many
+short (25mer) probes to measure hybridisation.
+In this practical, we explore the basic analysis issues for Affymetrix GeneChips which measure gene expression using multiple (11-20) perfect match (PM) and mismatch (MM) probes
+concentrated in the 3’ region of each transcript. 
 
+![pm-picture](images/pm.png)
+
+Despite our focus on expression arrays, many
+of the processing steps, such as quality assessment and normalisation are equally important
+for other applications of Affymetrix technology to ensure that the signal is comparable between arrays.
+In this practical we use several Bioconductor packages (affy, affyPLM, limma, etc.) to read in
+the raw data, assess data quality and normalise an Affymetrix experiment.
 
 # Example analysis in R
 
 ## The estrogen dataset
 
-The data for this section are described the `estrogen` data package
+The experiment we will analyse is from [1], and is made up of eight Affymetrix HGU95Av2
+GeneChips. The aim of the experiment is briefly described below (excerpt taken from the
+factDesign package vignette).
 
-```{r echo=FALSE,cache=TRUE}
+> “The investigators in this experiment were interested in the effect of estrogen on the genes in ER+ breast cancer cells over time. After serum starvation of all eight samples, they exposed
+four samples to estrogen, and then measured mRNA transcript abundance after 10 hours for
+two samples and 48 hours for the other two. They left the remaining four samples untreated,
+and measured mRNA transcript abundance at 10 hours for two samples, and 48 hours for
+the other two. Since there are two factors in this experiment (estrogen and time), each at
+two levels (present or absent, 10 hours or 48 hours), this experiment is said to have a 2 × 2
+factorial design.”
+
+The data for this section are described the [estrogen data package](http://www.bioconductor.org/packages/release/data/experiment/html/estrogen.html)
+
+```{r echo=FALSE,cache=TRUE,include=FALSE}
 datadir <- system.file("extdata", package="estrogen")
 dir.create("estrogen")
 sapply(list.files(datadir), function(x) file.copy(paste(datadir,x,sep="/"),"estrogen"))
@@ -26,7 +51,6 @@ sapply(list.files(datadir), function(x) file.copy(paste(datadir,x,sep="/"),"estr
 
 
 Raw data for Affymetrix arrays are usually stored in `.cel` format. The cel files for the example experiement are stored in the `estrogen` directory
-
 
 We read the targets file
 ```{r message=FALSE}
@@ -46,6 +70,96 @@ raw
 1) What type of Affy array is this
 2) How many features?
 3) How many samples?
+
+
+## Diagnostic plots 
+
+As with other microarray technologies, quality assessment is an important part of the
+analysis process. Data quality can be checked using various diagnostic plots.
+
+The first diagnostic plot we will meet is the "[boxplot](https://en.wikipedia.org/wiki/Box_plot)", which is a commonly-used plot in data analysis for *comparing data distributions*. The exact definition of how is boxplot is drawn can vary
+
+- The bottom of the box is the *first quartile*; the 25th percentile
+- The top of the box is the *third quartile*; the 75th percentile
+- The median is represented by a horizontal line
+- The *inter-quartile range* (IQR) is the difference between the 75th and 25th percentiles
+
+It is also common to draw whiskers that extend to 1.5 X the IQR from the lower and upper quartile. Any points outside this range can be represented by a dot.
+
+The `boxplot` function is used in R to construct a boxplot from a data frame. A separate box is constructed from the distribution of each column. In this example plot, we see that the median of the second column in the data frame is higher. Moreover, the variance of the second is column is higher.
+
+
+
+```{r echo=FALSE}
+df <- data.frame(x=rnorm(20),y=rnorm(20,2,2))
+df
+boxplot(df)
+summary(df)
+```
+
+***Being able to assess data distributions in this manner as parametric tests make certain assumptions about distribution.***
+
+In Bioconductor, you will usually find that package authors have created shortcuts to allow complicated data types to be visualised with common functions.
+
+```{r}
+boxplot(raw,col="red",las=2)
+```
+
+* What do you notice from this plot?
+
+
+
+## Perfect-Match and Mismatch probes
+
+Generate histograms of the PM and MM intensities from the first array. Do you
+notice any difference in the signal distribution of the PMs and MMs?
+
+
+```{r}
+par(mfrow=c(2,1))
+hist(log2(pm(raw[,1])),breaks=100,col="steelblue",main="PM",xlim=c(4,14))
+hist(log2(mm(raw[,1])),breaks=100,col="steelblue",main="MM",xlim=c(4,14))
+
+```
+
+
+
+M A plots are a useful way of comparing the red and green channels from a two-colour
+microarray. For Affymetrix data, which is a single-channel technology, M and A values can
+be calculated using the intensities from a pair of chips, i.e. if X i is the intensity of a given
+probe from chip i and X j is the intensity for the same probe on chip j, then 
+$A = 1/2 (log_2(X_i) + log_2(X_j))$ and $M = log_2(X_i) − log_2(X_j)$ . In this experiment, there are 8 GeneChips, which gives
+28 distinct pair-wise comparisons between arrays. We will focus on a subset of these below.
+
+Make a pairs plot of the PM intensities from arrays 1-4 and 5-8 to compare the
+data from the replicate arrays. Based on all the plots you have generated, what would you
+conclude about the overall quality of this experiment? Would you use all the data in the
+downstream differential expression analysis?
+
+```{r eval=FALSE}
+mva.pairs(pm(raw)[,1:4])
+mva.pairs(pm(raw)[,5:8])
+```
+
+
+## Probe-level Linear Models
+
+Probe-level Linear Models (PLMs) can be used as an additional tool to assess relative
+data quality within an experiment. Many different model specifications are possible, with
+the simplest fitting chip, and probe effects to the log 2 intensities within each probeset across
+an experiment in a robust way.
+The output is a matrix of residuals, or weights for each chip which can be used as an addi-
+tional diagnostic; systematically high residuals across an entire array, or a large fraction of
+an array is indicative of an outlier array. The main use of this tool is in deciding whether or
+not to keep an array in the down-stream data analysis.
+
+```{r}
+library(affyPLM)
+plmset <- fitPLM(raw)
+NUSE(plmset,las=2)
+RLE(plmset,las=2)
+```
+
 
 We can look at the images of the array surface. Ocassionally this can reveal [http://plmimagegallery.bmbolstad.com/](interesting / unusual artefacts)
 
@@ -71,40 +185,6 @@ image(raw[,8])
 ```
 
 - *Do you see any problems?
-
-The first diagnostic plot we will meet is the "boxplot"
-
-```{r echo=FALSE}
-df <- data.frame(x=rnorm(20),y=rnorm(20,2,2))
-boxplot(df)
-```
-
-In Bioconductor, you will usually find that package authors have created shortcuts to allow complicated data types to be visualised with common functions.
-
-```{r}
-boxplot(raw,col="red",las=2)
-```
-
-* What do you notice from this plot?*
-
-## Perfect-Match and Mismatch probes
-
-
-```{r}
-par(mfrow=c(2,1))
-hist(log2(pm(raw[,1])),breaks=100,col="steelblue",main="PM",xlim=c(4,14))
-hist(log2(mm(raw[,1])),breaks=100,col="steelblue",main="MM",xlim=c(4,14))
-
-```
-
-## Probe-level Linear Models
-
-```{r}
-library(affyPLM)
-plmset <- fitPLM(raw)
-NUSE(plmset,las=2)
-RLE(plmset,las=2)
-```
 
 
 ## Normalisation
@@ -133,13 +213,25 @@ abline(h=med,lty=2,col="red")
 - etc
 
 
+
+
 ## Non-linear effects
 
-The *MA-plot* is commonly-used in microarray analysis to 
+As we saw before The *MA-plot* is commonly-used in microarray analysis to commonly-used to visualise differences between pairs of arrays. These plots can reveal non-linear effects and motivate more-sophisticated methods.
 
-```{r}
-mva.pairs(pm(raw)[,1:2])
+(***not our dataset***)
+
+```{r echo=FALSE,message=FALSE}
+library(beadarrayExampleData)
+data("exampleSummaryData")
+data <- channel(exampleSummaryData,"G")
+M <- exprs(data)[,1] - exprs(data)[,8]
+A <- 0.5*(exprs(data)[,1] + exprs(data)[,8])
+library(ggplot2)
+df <- data.frame(M,A)
+ggplot(df, aes(x = A,y=M)) + geom_point() + geom_smooth() + geom_hline(yintercept=0,col="red",lty=2)
 ```
+
 
 
 ## Quantile normalisation
@@ -147,7 +239,7 @@ mva.pairs(pm(raw)[,1:2])
 This is arguably the most-popular normalisation method available. Consider the following matrix of values to be normalised
 
 ```{r echo=FALSE}
-df <- data.frame(Array1 = c(1,3,9,2,4), Array2 = c(3,4,2,1,9), Array3 = c(9,1,5,7,6))
+df <- data.frame(Array1 = rnorm(5,mean = 2), Array2 = rnorm(5,mean=3), Array3 = rnorm(5,mean=4))
 rownames(df) <- LETTERS[1:nrow(df)]
 df
 ```
@@ -334,6 +426,17 @@ Caveats
 
 ## Normalising the Estrogen dataset
 
+Many normalisation and summarisation methods have been developed for Affymetrix
+data. These include MAS5.0 and PLIER which were developed by Affymetrix and RMA,
+GC-RMA, dChip and vsn (to name but a few) which have been developed by academic re-
+searchers.
+Many of these methods are available in the affy package. For a comparison of some of these
+methods and assessment of their performance on different control data sets, see [2] or [3]. In
+this practical we will use the RMA (Robust Multichip Averaging) method described in [4].
+This method applies a model based background adjustment followed by quantile normali-
+sation and a robust summary method (median polish) on the log 2 PM intensities to obtain
+probeset summary values.
+
 rma incorporates quantile normalisation, along with a background correction
 
 The result is an `ExpressionSet`, which is a ubiquitous object in Biooconductor for storing high-throughput data
@@ -362,7 +465,8 @@ mva.pairs(exprs(eset)[,1:4])
 
 ## Automated QC
 
-```{r}
+
+```{r eval=FALSE}
 library(arrayQualityMetrics)
 arrayQualityMetrics(eset)
 ```
