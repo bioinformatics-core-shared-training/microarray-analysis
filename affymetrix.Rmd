@@ -101,7 +101,7 @@ summary(df)
 
 In Bioconductor, you will usually find that package authors have created shortcuts to allow complicated data types to be visualised with common functions.
 
-```{r}
+```{r eval=FALSE}
 boxplot(raw,col="red",las=2)
 ```
 
@@ -115,7 +115,7 @@ Generate histograms of the PM and MM intensities from the first array. Do you
 notice any difference in the signal distribution of the PMs and MMs?
 
 
-```{r}
+```{r eval=FALSE}
 par(mfrow=c(2,1))
 hist(log2(pm(raw[,1])),breaks=100,col="steelblue",main="PM",xlim=c(4,14))
 hist(log2(mm(raw[,1])),breaks=100,col="steelblue",main="MM",xlim=c(4,14))
@@ -286,7 +286,7 @@ Go back to the rank matrix
 rks
 
 ```
-Substitue with values from the target distribution
+Substitute with values from the target distribution
 ```{r echo=FALSE}
 target
 ```

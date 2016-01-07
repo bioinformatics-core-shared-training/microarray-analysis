@@ -10,6 +10,12 @@ library(beadarray)
 ```
 
 
+## Look at a 'modern' microarray
+
+![illumina-chips](images/chiptypes.png)
+
+Around 48,000 genes per sample, 12 samples on a slide
+
 # Illumina
 
 Single-channel microarrays  
