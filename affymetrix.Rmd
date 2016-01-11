@@ -50,7 +50,14 @@ sapply(list.files(datadir), function(x) file.copy(paste(datadir,x,sep="/"),"estr
 ```
 
 
-Raw data for Affymetrix arrays are usually stored in `.cel` format. The cel files for the example experiement are stored in the `estrogen` directory
+Raw data for Affymetrix arrays are usually stored in [`.cel`](http://dept.stat.lsa.umich.edu/~kshedden/Courses/Stat545/Notes/AffxFileFormats/cel.html) format. We wouldn't normally wish to view these files directly. These files contain the intensities of each "cell" on chip surface after image analysis. 
+
+  - Each hybridisation has a unique *cel* file
+  - It is know in advance which probe / probe set is located within each cell
+  - Each chip type (e.g.hgu95av2) has a *cdf* (chip description) file which is required to decode which probe and probe set is within each cell.
+
+
+The cel files for the example experiement are stored in the `estrogen` directory
 
 The first stage is to read the *targets* file. In Bioconductor we often use a targets to define the files corresponding to the raw data for the experiment and which sample groups they belong to. This sample group information is propogated through the analysis and incorporated in the quality assessment and eventually differential expression.
 
@@ -165,7 +172,7 @@ RLE(plmset,las=2)
 ```
 
 
-We can look at the images of the array surface. Ocassionally this can reveal problems on the array. See this [gallery](http://plmimagegallery.bmbolstad.com/) of interesting examples.
+We can look at the images of the array surface. Ocassionally this can reveal problems on the array. See this [gallery](http://plmimagegallery.bmbolstad.com/) of interesting examples. Affymetrix, and other older arrays are vunerable to spatial artefacts as the same probe set is found in the same location on each chip. 
 
 If you want to look at the array image, we can use the following code;
 
@@ -460,10 +467,16 @@ searchers.
 Many of these methods are available in the [affy](http://bioconductor.org/packages/release/bioc/html/affy.html) package. For a comparison of some of these
 methods and assessment of their performance on different control data sets, see [Bolstad et al](http://bioinformatics.oxfordjournals.org/content/19/2/185.long) or [Millenaar et al](http://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-7-137). In
 this practical we will use the ***RMA*** (Robust Multichip Averaging) method described in [Irizarry et al](http://www.ncbi.nlm.nih.gov/pubmed/12925520).
-This method applies a model based background adjustment followed by quantile normalisation and a robust summary method (median polish) on the log$_2$ PM intensities to obtain probeset summary values.
+
+Procedure;
+
+- model based background adjustment 
+- followed by quantile normalisation and a 
+- robust summary method (median polish) on the log$_2$ PM intensities 
+- to obtain *probeset summary values*.
 
 
-The result is an `ExpressionSet`, which is a ubiquitous object in Biooconductor for storing high-throughput data
+The result is an `ExpressionSet`, which is a ubiquitous object in Biooconductor for storing high-throughput data. Later-on in the course will we import data from public repositories, and these data will often be in a normalised form.
 
 ```{r}
 eset <- rma(raw)
@@ -476,24 +489,32 @@ For example, if we want to extract the expression measurements themselves the fu
 
 ```{r}
 head(exprs(eset))
+summary(exprs(eset))
 ```
 
+You will notice the *rma* also incorporates a log$_2$ transformation. The values present in the *cel* files are derived from processing the *TIFF* images of the chip surface, which are on the scale 0 - 2^16. However, this is not a very convenient scale for visualisation and analysis as most of the observations are found at the lower end of the scale and there is a much greater variance at the higer values. We say that the data exhibit ['heteroscedasticity'](https://en.wikipedia.org/wiki/Heteroscedasticity). To alleviate this we can use a data transformation such as log$_2$ and afterwards our data will be in the range 0 to 16. Another method you may come across is [vsn](http://bioinformatics.oxfordjournals.org/content/18/suppl_1/S96.long). 
 
 
 ```{r}
-head(pData(eset))
+boxplot(exprs(eset),las=2)
 ```
 
 
-```{r}
-boxplot(exprs(eset))
-```
 
-- How can you tell from the boxplot that these data have been normalised`?
+- How can you tell from the boxplot that these data have been normalised?
 
 ```{r}
 mva.pairs(exprs(eset)[,1:4])
 ```
+
+If we have used a *targets* file to read the raw data, this information will stored in the summarised object. Commonly-referred to as "pheno data", this can retrieved using the `pData` function. A nice property of this data frame is that the *rows* are arranged in the same order as the *columns* of the expression matrix. i.e. The first column of the expression matrix is described in the first row of the pheno data matrix, and so on. 
+
+```{r}
+head(pData(eset))
+colnames(exprs(eset))
+rownames(pData(eset))
+```
+
 
 ## Automated QC
 

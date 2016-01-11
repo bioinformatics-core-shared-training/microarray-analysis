@@ -9,31 +9,30 @@ output: html_document
 library(beadarray)
 ```
 
-
-## Look at a 'modern' microarray
-
-![illumina-chips](images/chiptypes.png)
-
-Around 48,000 genes per sample, 12 samples on a slide
-
 # Illumina
 
-Single-channel microarrays  
+## Single-channel microarrays  
 + 50 base-pair 'probes' with the same sequence are attached to a bead 
 + Beads that have the same probe sequence are known as a *bead-type*
 + Beads are identified by Illumina using a decoding sequence
 
-![abead](images/abead.png)
-
-Randomly-arranged arrays
+## Randomly-arranged arrays
 
 + Arrays of randomly-arranged beads are constructed
 + The number of replicates of each bead-type follows a normal distribution
 + Around 20 replicates on most-recent arrays
 
+![abead](images/abead.png)
+
+![illumina-chips](images/chiptypes.png)
+
++ 'Refseq' chips with 24,000 bead-types per array, 8 arrays per chip
++  WG- chips with 48,000 bead-types per array, 6 arrays per chip
++ HT-12 chips with 48,000 bead-types per array, 12 arrays per chip
++ Each chip also has an annotation 'version' (v1, v2, v3, v4)
 
 
-Example Arrangement
+## Example Arrangement
 Observations for Gene X on Illumina and older array technologies
 
 ![BeadPositions](images/BeadPositions.png)
@@ -42,19 +41,6 @@ Example
 Consider a technical failure on one of the arrays
 
 ![artefact](images/BeadPositionsWArtifact.png)
-
-Output formats
-
-TIFF image representation of the array surface
-
-![nicearray](images/nicearray.jpg)
-
-
-A text description of the bead locations, unique to each array. 
-
-![beadleveltext](images/beadleveltxt.jpg)
-
-Know as *bead-level* data.
 
 ## Workflow
 The analyst may have a choice over what data to take as a starting point
@@ -65,9 +51,35 @@ The analyst may have a choice over what data to take as a starting point
 + Starting with raw, or bead-level data gives more flexiblity in analysis
 + Bead-summary data fit in with standard Bioconductor tools
 ![illumina-workflow](images/CombinedFigure1WithAnno.png)
-[http://tinyurl.com/omdru97](Ritchie et al)
 
-(adapted from Ritchie et al)
+(adapted from [Ritchie et al](http://www.ncbi.nlm.nih.gov/pmc/articles/PMC3228778/))
+
+The [recommmended](http://www.ncbi.nlm.nih.gov/pmc/articles/PMC3228778/) approach is to work with the so-called ***bead-level*** data as it allows the entire analysis workflow to be performed in R and Bioconductor, with all the benefits of reproducibility and transparency that gives. However, in order to produce data of this type, several modifications need to be made to the manufacturer's scanning software. Consequently, data of this type are uncommon. 
+
+If you have bead-level data, then for each hybridisation you will have;
+
+1) A TIFF image representation of the array surface
+
+![nicearray](images/nicearray.jpg)
+
+
+2) A text description of the bead locations, unique to each array. This is required 
+
+![beadleveltext](images/beadleveltxt.jpg)
+
+
+## Workflow from bead-level data
+
+```{r}
+ht12metrics <- read.table(system.file("extdata/Chips/Metrics.txt" ,
+  package = "BeadArrayUseCases") , sep = "\t" , header = TRUE ,as.is = TRUE )
+ht12metrics
+ht12snr <- ht12metrics$P95Grn / ht12metrics$P05Grn
+plot (1:12 , ht12snr , pch = 19 , ylab = " P95 / P05 " , xlab = " " ,main = " Signal - to - noise ratio for HT12 data ")
+axis (2)
+axis (1 , 1:12 , labs , las = 2)
+```
+
 
 
 ```{r cache=TRUE}
@@ -80,12 +92,6 @@ data <- readIllumina(dir=chipPath,sampleSheet=sampleSheetFile,illuminaAnnotation
 ```
 
 
-+ 'Refseq' chips with 24,000 bead-types per array, 8 arrays per chip
-+  WG- chips with 48,000 bead-types per array, 6 arrays per chip
-+ HT-12 chips with 48,000 bead-types per array, 12 arrays per chip
-+ Each chip also has an annotation 'version' (v1, v2, v3, v4)
-
-![chiptypes](images/chiptypes.png)
 
 Just like with Affy data, we can visualise the raw images.
 
@@ -99,11 +105,20 @@ imageplot(data, array=8,high="darkgreen",low="lightgreen",zlim=c(4,10))
 ```
 
 
-We could use ***BASH*** which we don't cover today
+
+We could use [***BASH***](http://bioinformatics.oxfordjournals.org/content/24/24/2921.full) which we don't cover today
+
+```{r}
+combinedControlPlot(data)
+```
+
+
+## Summarisation
+
 
 Now we can summarise the data into a more-usable form
 
-* outlier calculation?*
+
 
 ```{r cache=TRUE,echo=FALSE}
 eset.ill <- summarize(data)
@@ -136,3 +151,9 @@ eset.norm <- normaliseIllumina(eset.ill[,c(1:6,9:12)])
 ## Alternative data import
 
 (from limma users guide)
+
+```{r}
+library(lumi)
+```
+
+
