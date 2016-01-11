@@ -22,14 +22,14 @@ concentrated in the 3’ region of each transcript.
 Despite our focus on expression arrays, many
 of the processing steps, such as quality assessment and normalisation are equally important
 for other applications of Affymetrix technology to ensure that the signal is comparable between arrays.
-In this practical we use several Bioconductor packages (affy, affyPLM, limma, etc.) to read in
+In this practical we use several Bioconductor packages ([affy](http://bioconductor.org/packages/release/bioc/html/affy.html), [affyPLM](http://bioconductor.org/packages/release/bioc/html/affyPLM.html), [limma](http://bioconductor.org/packages/release/bioc/html/limma.html), etc.) to read in
 the raw data, assess data quality and normalise an Affymetrix experiment.
 
 # Example analysis in R
 
 ## The estrogen dataset
 
-The experiment we will analyse is from [1], and is made up of eight Affymetrix HGU95Av2
+The experiment we will analyse is made-up of eight Affymetrix *HGU95Av2*
 GeneChips. The aim of the experiment is briefly described below (excerpt taken from the
 factDesign package vignette).
 
@@ -52,7 +52,8 @@ sapply(list.files(datadir), function(x) file.copy(paste(datadir,x,sep="/"),"estr
 
 Raw data for Affymetrix arrays are usually stored in `.cel` format. The cel files for the example experiement are stored in the `estrogen` directory
 
-We read the targets file
+The first stage is to read the *targets* file. In Bioconductor we often use a targets to define the files corresponding to the raw data for the experiment and which sample groups they belong to. This sample group information is propogated through the analysis and incorporated in the quality assessment and eventually differential expression.
+
 ```{r message=FALSE}
 library(affy)
 targetsFile <- "estrogen/estrogen.txt"
@@ -60,8 +61,9 @@ pd <- read.AnnotatedDataFrame(targetsFile,header=TRUE,sep="",row.names=1)
 pData(pd)
 ```
 
+As cel files are not a typical file format, we cannot use the standard R functions such as `read.delim`, `read.csv` and `read.table`. The function to import the data is `ReadAffy` from the [affy](http://bioconductor.org/packages/release/bioc/html/affy.html) package. 
 
-```{r,message=FALSE}
+```{r,message=FALSE,warning=FALSE}
 
 raw <-ReadAffy(celfile.path = "estrogen", filenames=rownames(pData(pd)),phenoData = pd)
 raw
@@ -74,7 +76,7 @@ raw
 
 ## Diagnostic plots 
 
-As with other microarray technologies, quality assessment is an important part of the
+As with other high-throughput technologies, quality assessment is an important part of the
 analysis process. Data quality can be checked using various diagnostic plots.
 
 The first diagnostic plot we will meet is the "[boxplot](https://en.wikipedia.org/wiki/Box_plot)", which is a commonly-used plot in data analysis for *comparing data distributions*. The exact definition of how is boxplot is drawn can vary
@@ -97,7 +99,7 @@ boxplot(df)
 summary(df)
 ```
 
-***Being able to assess data distributions in this manner as parametric tests make certain assumptions about distribution.***
+***Being able to assess data distributions in this manner is important as parametric tests make certain assumptions about distribution.***
 
 In Bioconductor, you will usually find that package authors have created shortcuts to allow complicated data types to be visualised with common functions.
 
@@ -110,6 +112,8 @@ boxplot(raw,col="red",las=2)
 
 
 ## Perfect-Match and Mismatch probes
+
+
 
 Generate histograms of the PM and MM intensities from the first array. Do you
 notice any difference in the signal distribution of the PMs and MMs?
@@ -124,10 +128,12 @@ hist(log2(mm(raw[,1])),breaks=100,col="steelblue",main="MM",xlim=c(4,14))
 
 
 
-M A plots are a useful way of comparing the red and green channels from a two-colour
+***M-A*** plots (sometimes called *bland-altman* plots in other fields) are a useful way of comparing the red and green channels from a two-colour
 microarray. For Affymetrix data, which is a single-channel technology, M and A values can
-be calculated using the intensities from a pair of chips, i.e. if X i is the intensity of a given
-probe from chip i and X j is the intensity for the same probe on chip j, then 
+be calculated using the intensities from a pair of chips. We would typically produce a plot using samples from the same biological group, where we would not expect to observe much difference in intensity for a given gene.
+
+i.e. if X$_i$ is the intensity of a given
+probe from chip $i$ and X$_j$ is the intensity for the same probe on chip $j$, then 
 $A = 1/2 (log_2(X_i) + log_2(X_j))$ and $M = log_2(X_i) − log_2(X_j)$ . In this experiment, there are 8 GeneChips, which gives
 28 distinct pair-wise comparisons between arrays. We will focus on a subset of these below.
 
@@ -146,14 +152,12 @@ mva.pairs(pm(raw)[,5:8])
 
 Probe-level Linear Models (PLMs) can be used as an additional tool to assess relative
 data quality within an experiment. Many different model specifications are possible, with
-the simplest fitting chip, and probe effects to the log 2 intensities within each probeset across
+the simplest fitting chip, and probe effects to the log$_2$ intensities within each probeset across
 an experiment in a robust way.
-The output is a matrix of residuals, or weights for each chip which can be used as an addi-
-tional diagnostic; systematically high residuals across an entire array, or a large fraction of
-an array is indicative of an outlier array. The main use of this tool is in deciding whether or
+The output is a matrix of residuals, or weights for each chip which can be used as an additional diagnostic; systematically high residuals across an entire array, or a large fraction of an array is indicative of an outlier array. The main use of this tool is in deciding whether or
 not to keep an array in the down-stream data analysis.
 
-```{r}
+```{r message=FALSE}
 library(affyPLM)
 plmset <- fitPLM(raw)
 NUSE(plmset,las=2)
@@ -161,9 +165,9 @@ RLE(plmset,las=2)
 ```
 
 
-We can look at the images of the array surface. Ocassionally this can reveal [http://plmimagegallery.bmbolstad.com/](interesting / unusual artefacts)
+We can look at the images of the array surface. Ocassionally this can reveal problems on the array. See this [gallery](http://plmimagegallery.bmbolstad.com/) of interesting examples.
 
-If you want to look at the array image, we can use the following code
+If you want to look at the array image, we can use the following code;
 
 ```{r}
 bad <- ReadAffy(celfile.path = "estrogen/",filenames="bad.cel")
@@ -184,7 +188,7 @@ image(raw[,7])
 image(raw[,8])
 ```
 
-- *Do you see any problems?
+- Do you see any problems?
 
 
 ## Normalisation
@@ -195,7 +199,7 @@ image(raw[,8])
 - Easy option would to scale values for each array to median level
 ```{r echo=FALSE,warning=FALSE,fig.height=4,fig.width=8}
 
-boxplot(raw)
+boxplot(raw,las=2)
 
 x <- raw
          tmp <- unlist(indexProbes(x, which="both"))
@@ -259,7 +263,7 @@ rks
 
 
 
-Sort each column Largest...Smallest
+Sort each column Smallest...Largest
 
 Original data
 ```{r echo=FALSE}
@@ -396,10 +400,10 @@ rks
 
 ##Final Code
 
-```{r}
-df <- data.frame(Array1 = c(1,3,9,2,4), 
-                 Array2 = c(3,4,2,1,9), Array3 = c(9,1,5,7,6))
-rownames(df) <- LETTERS[1:nrow(df)]
+The procedure can be encapsulated in relatively few lines of code
+
+```{r eval=FALSE}
+
 rks <- apply(df, 2, function(x) paste("Rank",
       rank(x,ties.method="min"),sep=""))
 target <- round(rowMeans(apply(df, 2,sort)),3)
@@ -412,10 +416,14 @@ for(i in 1:ncol(df)){
 norm <- as.data.frame(rks)
 ```
 
+We can use the `normalizeQuantiles` function within the `limma` package to do the normalisation. 
 
-##Effect of quantile normalisation
+```{r message=FALSE}
+library(limma)
+?normalizeQuantiles
+```
 
-Caveats
+### Caveats
 
 - Distributions of samples are expected to be the same
 - Majority of genes do not change between groups
@@ -423,21 +431,37 @@ Caveats
 ## Other normalisation procedures
 
 - loess or splines
+    + need a reference or "average" array to compare 
+    + estimate the curve and use to correct each point
+
+```{r echo=FALSE,message=FALSE}
+library(beadarrayExampleData)
+data("exampleSummaryData")
+data <- channel(exampleSummaryData,"G")
+M <- exprs(data)[,1] - exprs(data)[,8]
+A <- 0.5*(exprs(data)[,1] + exprs(data)[,8])
+library(ggplot2)
+df <- data.frame(M,A)
+ggplot(df, aes(x = A,y=M)) + geom_point() + geom_smooth() + geom_hline(yintercept=0,col="red",lty=2)
+```
+
+```{r}
+library(affy)
+?normalize.loess
+```
+
 
 ## Normalising the Estrogen dataset
 
 Many normalisation and summarisation methods have been developed for Affymetrix
-data. These include MAS5.0 and PLIER which were developed by Affymetrix and RMA,
+data. These include MAS5.0 and PLIER which were developed by Affymetrix, and RMA,
 GC-RMA, dChip and vsn (to name but a few) which have been developed by academic re-
 searchers.
-Many of these methods are available in the affy package. For a comparison of some of these
-methods and assessment of their performance on different control data sets, see [2] or [3]. In
-this practical we will use the RMA (Robust Multichip Averaging) method described in [4].
-This method applies a model based background adjustment followed by quantile normali-
-sation and a robust summary method (median polish) on the log 2 PM intensities to obtain
-probeset summary values.
+Many of these methods are available in the [affy](http://bioconductor.org/packages/release/bioc/html/affy.html) package. For a comparison of some of these
+methods and assessment of their performance on different control data sets, see [Bolstad et al](http://bioinformatics.oxfordjournals.org/content/19/2/185.long) or [Millenaar et al](http://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-7-137). In
+this practical we will use the ***RMA*** (Robust Multichip Averaging) method described in [Irizarry et al](http://www.ncbi.nlm.nih.gov/pubmed/12925520).
+This method applies a model based background adjustment followed by quantile normalisation and a robust summary method (median polish) on the log$_2$ PM intensities to obtain probeset summary values.
 
-rma incorporates quantile normalisation, along with a background correction
 
 The result is an `ExpressionSet`, which is a ubiquitous object in Biooconductor for storing high-throughput data
 
@@ -446,9 +470,15 @@ eset <- rma(raw)
 eset
 ```
 
+The `ExpressionSet` is a convenient object-type for storing multiple high-dimensional data frames. The structure of the object is much more complicated than other types of data we have seen before. In fact we do not need to know need exactly *how* the object is constructed internally. The package authors have provided convenient functions that will allow us to access the data. 
+
+For example, if we want to extract the expression measurements themselves the function to use is called `exprs`. The result will be a matrix with one row for each gene, and one column for each sample.
+
 ```{r}
 head(exprs(eset))
 ```
+
+
 
 ```{r}
 head(pData(eset))
@@ -458,6 +488,8 @@ head(pData(eset))
 ```{r}
 boxplot(exprs(eset))
 ```
+
+- How can you tell from the boxplot that these data have been normalised`?
 
 ```{r}
 mva.pairs(exprs(eset)[,1:4])

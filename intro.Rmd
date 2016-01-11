@@ -120,29 +120,16 @@ et al., 2006)
 
 ##Are arrays still relevant?
 
-- Wealth of data available online e.g. on >>[G.E.O](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GPL10558)<<
+- Wealth of data available online e.g. on [G.E.O](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GPL10558)
 - Useful as a validation platform
 - Methods are established and well-understood
 - Cheaper? And easier access to equipment
 
 
-##Are arrays still relevant?
+The "death" of microarrays was predicted as early as [2008](http://www.nature.com/news/2008/081015/full/455847a.html). In reality, it took quite a lot longer for arrays to be come obsolete. We have recently reached the [tipping point](http://core-genomics.blogspot.co.uk/2014/08/seqc-kills-microarrays-not-quite.html) where RNA-seq has taken over from gene expression arrays.
 
-![microarray-dead](images/microarray-dead.png)
+There is a vast amount of [Illumina](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GPL10558) and [Affymetrix](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GPL570) data out there waiting to be explored. Some studies often use these historical samples as validation of computational methods of cancer subtypes. e.g.  [here](http://jnci.oxfordjournals.org/content/107/1/dju357.abstract?cited-by=yes;107/1/dju357) or [here](http://www.genomebiology.com/2014/15/8/431)
 
-##Are arrays still relevant?
-http://core-genomics.blogspot.co.uk/2014/08/seqc-kills-microarrays-not-quite.html
-
-![hadfield-blog](images/hadfield-blog.png)
-
-
-##Are arrays still relevant?
-
-![AIMS](images/AIMS.png)
-
-##Are arrays still relevant?
-
-![intclust](images/intclust.png)
 
 ### Many of the same issues apply to NGS data
 
@@ -153,9 +140,8 @@ http://core-genomics.blogspot.co.uk/2014/08/seqc-kills-microarrays-not-quite.htm
 - Statistical testing
 - Clustering classification etc
 
-Microarray data are much more manageable in size. We can work with decent-sized experiments (~100s of samples)
+Microarray data are much more manageable in size. We can work with decent-sized experiments (~100s of samples) and learn about high-dimensional analysis techniques
 
-# The Bioconductor project
 
 ![BioC](images/logo_bioconductor.png)
 
@@ -169,6 +155,10 @@ Microarray data are much more manageable in size. We can work with decent-sized 
 
 ## Advantages of R
 
+![NYT](images/NYTimes_R_Article.png)
+
+The R programming language is now recognised beyond the academic community as an effect solution for data analysis and visualisation. [Notable users of R](http://www.revolutionanalytics.com/companies-using-r) include [Facebook](http://blog.revolutionanalytics.com/2010/12/analysis-of-facebook-status-updates.html), [google](http://blog.revolutionanalytics.com/2009/05/google-using-r-to-analyze-effectiveness-of-tv-ads.html), [Microsoft](http://blog.revolutionanalytics.com/2014/05/microsoft-uses-r-for-xbox-matchmaking.html) (who recently [invested](http://blogs.microsoft.com/blog/2015/01/23/microsoft-acquire-revolution-analytics-help-customers-find-big-data-value-advanced-statistical-analysis/) in a commerical provider of R), and the [New York Times](http://blog.revolutionanalytics.com/2011/03/how-the-new-york-times-uses-r-for-data-visualization.html).
+
 - Open-source
 - Cross-platform
 - Reproducibility
@@ -176,14 +166,8 @@ Microarray data are much more manageable in size. We can work with decent-sized 
 - Flexibility
 - Visualisation and interactivity
 
-## Recent Press
-
-![NYT](images/NYTimes_R_Article.png)
 
 
-## Recent Press
-
-![Nature](images/r-in-nature.png)
 
 ## Support for R
 
