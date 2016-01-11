@@ -91,16 +91,32 @@ The intensities of the features on a microarray are influenced by many sources o
 et al., 2006](http://www.nature.com/nrg/journal/v7/n1/full/nrg1749.html))
 
 - Background correction
+    + Microarray probes are affected by cross hybridisation and other 
+    + We address this by measuring 'negative control' probes that we don't expect to yield any signal
+    + Affymetrix and Illumina have different ways of doing this
+    
 - Quality assessment
     + Some arrays might be dodgy or be from poor-quality samples
     + Systematic effects may emerge over time
-
+- Transformation
+    + The TIFF images yield values on the scale 0 to 2^16, which is not very convenient for analysis
+    + A suitable transformation, such as log$_2$ is often used
+- Annotation
+    + Microarry manufacturers use their own identifier schemes that don't relate to biology
+        + "ILMN_1343291", "ILMN_1343295",...
+        + "1000_at", "1001_at",....
+    + We need to map these IDs to gene names, genome position etc.
+    + Sometimes they mappings can be wrong, like for [Affy](http://nar.oxfordjournals.org/content/33/20/e175.abstract) and [Illumina](http://nar.oxfordjournals.org/content/38/3/e17.long)
+    + Actually, this is a main reason why sequencing is better
+        
+        
 ##Microarrays vs sequencing
 
 - Probe design issues
 - Limited number of novel findings
 - Genome coverage
-
+- On the other-hand, microarray analysis methods are well-understood and established pipelines can process the data quickly and efficiently
+- (although sequencing (particularly RNA-seq) is catching-up)
 
 ##Are arrays still relevant?
 

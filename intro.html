@@ -89,11 +89,32 @@ img {
 <h3>Data processing</h3>
 <p>The intensities of the features on a microarray are influenced by many sources of noise and repeated measurements made on different microarrays may also appear to disagree. Therefore, a number of data-cleaning, or pre-processing steps, must take place before being able to draw valid biological conclusions from a microarray experiment (<a href="http://www.nature.com/ng/journal/v32/n4s/full/ng1032.html">Quackenbush, 2002</a>; <a href="http://www.statsci.org/smyth/pubs/Smyth-MethodsMolecularBiology-2003.pdf">Smyth et al., 2003</a>; <a href="http://www.nature.com/nrg/journal/v7/n1/full/nrg1749.html">Allison et al., 2006</a>)</p>
 <ul>
-<li>Background correction</li>
+<li>Background correction
+<ul>
+<li>Microarray probes are affected by cross hybridisation and other</li>
+<li>We address this by measuring ‘negative control’ probes that we don’t expect to yield any signal</li>
+<li>Affymetrix and Illumina have different ways of doing this</li>
+</ul></li>
 <li>Quality assessment
 <ul>
 <li>Some arrays might be dodgy or be from poor-quality samples</li>
 <li>Systematic effects may emerge over time</li>
+</ul></li>
+<li>Transformation
+<ul>
+<li>The TIFF images yield values on the scale 0 to 2^16, which is not very convenient for analysis</li>
+<li>A suitable transformation, such as log<span class="math">\(_2\)</span> is often used</li>
+</ul></li>
+<li>Annotation
+<ul>
+<li>Microarry manufacturers use their own identifier schemes that don’t relate to
+<ul>
+<li>“ILMN_1343291”, “ILMN_1343295”,…</li>
+<li>“1000_at”, “1001_at”,….</li>
+</ul></li>
+<li>We need to map these IDs to gene names, genome position etc.</li>
+<li>Sometimes they mappings can be wrong, like for <a href="http://nar.oxfordjournals.org/content/33/20/e175.abstract">Affy</a> and <a href="http://nar.oxfordjournals.org/content/38/3/e17.long">Illumina</a></li>
+<li>Actually, this is a main reason why sequencing is better</li>
 </ul></li>
 </ul>
 </div>
@@ -104,6 +125,8 @@ img {
 <li>Probe design issues</li>
 <li>Limited number of novel findings</li>
 <li>Genome coverage</li>
+<li>On the other-hand, microarray analysis methods are well-understood and established pipelines can process the data quickly and efficiently</li>
+<li>(although sequencing (particularly RNA-seq) is catching-up)</li>
 </ul>
 </div>
 <div id="are-arrays-still-relevant" class="section level2">
@@ -299,6 +322,10 @@ df</code></pre>
 <li>Annotation for the probes</li>
 </ul>
 <p>In Bioconductor we will often put these data the same object for easy referencing. The <code>Biobase</code> package has all the code to do this.</p>
+</div>
+<div id="practical-time" class="section level2">
+<h2>Practical time</h2>
+<p>We will now practice reading data into R, subsetting and creating some of these basic object types</p>
 </div>
 </div>
 
