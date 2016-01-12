@@ -15,4 +15,4 @@ download.file(remotefile, destfile="data/GSE3156_series_matrix.txt.gz")
 
 url <- "ftp://ftp.ncbi.nih.gov/pub/geo/DATA/SeriesMatrix/GSE33126/"
 filenm <- "GSE33126_series_matrix.txt.gz"
-if(!file.exists("GSE33126_series_matrix.txt.gz")) download.file(paste(url, filenm, sep=""), destfile=paste0("data/",ilenm))
+if(!file.exists("GSE33126_series_matrix.txt.gz")) download.file(paste(url, filenm, sep=""), destfile=paste0("data/",filenm))
