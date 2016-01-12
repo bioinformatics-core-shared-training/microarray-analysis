@@ -23,7 +23,11 @@ Despite our focus on expression arrays, many
 of the processing steps, such as quality assessment and normalisation are equally important
 for other applications of Affymetrix technology to ensure that the signal is comparable between arrays.
 In this practical we use several Bioconductor packages ([affy](http://bioconductor.org/packages/release/bioc/html/affy.html), [affyPLM](http://bioconductor.org/packages/release/bioc/html/affyPLM.html), [limma](http://bioconductor.org/packages/release/bioc/html/limma.html), etc.) to read in
-the raw data, assess data quality and normalise an Affymetrix experiment.
+the raw data, assess data quality and normalise an Affymetrix experiment. Raw data for Affymetrix arrays are usually stored in [`.cel`](http://dept.stat.lsa.umich.edu/~kshedden/Courses/Stat545/Notes/AffxFileFormats/cel.html) format. We wouldn't normally wish to view these files directly. These files contain the intensities of each "cell" on chip surface after image analysis. 
+
+  - Each hybridisation has a unique *cel* file
+  - It is know in advance which probe / probe set is located within each cell
+  - Each chip type (e.g.hgu95av2) has a *cdf* (chip description) file which is required to decode which probe and probe set is within each cell.
 
 # Example analysis in R
 
@@ -50,16 +54,10 @@ sapply(list.files(datadir), function(x) file.copy(paste(datadir,x,sep="/"),"estr
 ```
 
 
-Raw data for Affymetrix arrays are usually stored in [`.cel`](http://dept.stat.lsa.umich.edu/~kshedden/Courses/Stat545/Notes/AffxFileFormats/cel.html) format. We wouldn't normally wish to view these files directly. These files contain the intensities of each "cell" on chip surface after image analysis. 
-
-  - Each hybridisation has a unique *cel* file
-  - It is know in advance which probe / probe set is located within each cell
-  - Each chip type (e.g.hgu95av2) has a *cdf* (chip description) file which is required to decode which probe and probe set is within each cell.
-
 
 The cel files for the example experiement are stored in the `estrogen` directory
 
-The first stage is to read the *targets* file. In Bioconductor we often use a targets to define the files corresponding to the raw data for the experiment and which sample groups they belong to. This sample group information is propogated through the analysis and incorporated in the quality assessment and eventually differential expression.
+The first stage is to read the *targets* file. In Bioconductor we often use a targets file to define the files corresponding to the raw data for the experiment and which sample groups they belong to. Such a file can be created in a spreadsheet, or text editor, and usually saved as a tab-delimited file. We can have as many columns in the file as we see fit, and one row for each hybridisation. The sample group information is propogated through the analysis and incorporated in the quality assessment and eventually differential expression. We refer to this as the "phenotype data" for the experiment, or sometimes the *"metadata"*.
 
 ```{r message=FALSE}
 library(affy)
@@ -86,7 +84,7 @@ raw
 As with other high-throughput technologies, quality assessment is an important part of the
 analysis process. Data quality can be checked using various diagnostic plots.
 
-The first diagnostic plot we will meet is the "[boxplot](https://en.wikipedia.org/wiki/Box_plot)", which is a commonly-used plot in data analysis for *comparing data distributions*. The exact definition of how is boxplot is drawn can vary
+The first diagnostic plot we will meet is the "[boxplot](https://en.wikipedia.org/wiki/Box_plot)", which is a commonly-used plot in data analysis for *comparing data distributions*. The exact definition of how is boxplot is drawn can vary, the definitions always hold;
 
 - The bottom of the box is the *first quartile*; the 25th percentile
 - The top of the box is the *third quartile*; the 75th percentile
@@ -95,8 +93,14 @@ The first diagnostic plot we will meet is the "[boxplot](https://en.wikipedia.or
 
 It is also common to draw whiskers that extend to 1.5 X the IQR from the lower and upper quartile. Any points outside this range can be represented by a dot.
 
-The `boxplot` function is used in R to construct a boxplot from a data frame. A separate box is constructed from the distribution of each column. In this example plot, we see that the median of the second column in the data frame is higher. Moreover, the variance of the second is column is higher.
 
+Lets say that we want to compare two distributions, x and y, which are stored in a *data frame*. The `boxplot` function is used in R to construct a boxplot from a data frame. A separate box is constructed from the distribution of each column. In this example plot, we see that the median of the second column in the data frame is higher. Moreover, the variance of the second is column is higher.
+
+
+```{r eval=FALSE}
+df <- data.frame(x,y)
+boxplot(df)
+```
 
 
 ```{r echo=FALSE}
@@ -108,7 +112,7 @@ summary(df)
 
 ***Being able to assess data distributions in this manner is important as parametric tests make certain assumptions about distribution.***
 
-In Bioconductor, you will usually find that package authors have created shortcuts to allow complicated data types to be visualised with common functions.
+In Bioconductor, you will usually find that package authors have created shortcuts to allow complicated data types to be visualised with common functions. For instance, if we want to construct a boxplot from our raw Affymetrix data it would be quite a daunting task for the novice to extract the revelant information from the object. Instead, we can use functions that we are familiar with. The boxplot can also be customised in ways that we are familiar with such as changing the color (the `col` argument) and label orientation (`las=2` to make labels perpendicular to the axis)
 
 ```{r eval=FALSE}
 boxplot(raw,col="red",las=2)
@@ -119,6 +123,8 @@ boxplot(raw,col="red",las=2)
 
 
 ## Perfect-Match and Mismatch probes
+
+With the short DNA sequences used for microarray hybridisation, there is the possibility for the sequence designed to not be specific-enough and hybridise to many regions of the genome. Affymetrix attempt to resolve this issue by having a mismatch sequence corresponding to each probe. Ideally, the subtracting the mismatch from the corresponding perfect match( $PM - MM$) should yield a background-corrected, and more-reliable, signal.
 
 
 
@@ -197,6 +203,24 @@ image(raw[,8])
 
 - Do you see any problems?
 
+If we are happy with the quality of the raw data we can proceed to the next step. So far in the data, we have multiple probes within a probeset, and a perfect and mismatch measurement for each probe. These are not particular covenient values for statistical analysis as we would like a *single measurement* for each gene for each sample (/hybridisation). 
+
+## Summarising and Normalising the Estrogen dataset
+
+Many normalisation and summarisation methods have been developed for Affymetrix
+data. These include MAS5.0 and PLIER which were developed by Affymetrix, and RMA,
+GC-RMA, dChip and vsn (to name but a few) which have been developed by academic re-
+searchers.
+Many of these methods are available in the [affy](http://bioconductor.org/packages/release/bioc/html/affy.html) package. For a comparison of some of these
+methods and assessment of their performance on different control data sets, see [Bolstad et al](http://bioinformatics.oxfordjournals.org/content/19/2/185.long) or [Millenaar et al](http://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-7-137). In
+this practical we will use the ***RMA*** (Robust Multichip Averaging) method described in [Irizarry et al](http://www.ncbi.nlm.nih.gov/pubmed/12925520).
+
+Procedure;
+
+- model based background adjustment 
+- followed by quantile normalisation and a 
+- robust summary method (median polish) on the log$_2$ PM intensities 
+- to obtain *probeset summary values*.
 
 ## Normalisation
 
@@ -204,6 +228,10 @@ image(raw[,8])
 - We want to be observing *biological* and not *technical* variation
 - We wouldn't expect such wholesale changes on a per-sample basis
 - Easy option would to scale values for each array to median level
+
+- **What would happen if we had hybridised all the *estrogen-treated* samples on the first four arrays, and *un-treated* on the last four** - Could you analyse the data?
+
+
 ```{r echo=FALSE,warning=FALSE,fig.height=4,fig.width=8}
 
 boxplot(raw,las=2)
@@ -458,23 +486,15 @@ library(affy)
 ```
 
 
-## Normalising the Estrogen dataset
+## Running RMA on our dataset
 
-Many normalisation and summarisation methods have been developed for Affymetrix
-data. These include MAS5.0 and PLIER which were developed by Affymetrix, and RMA,
-GC-RMA, dChip and vsn (to name but a few) which have been developed by academic re-
-searchers.
-Many of these methods are available in the [affy](http://bioconductor.org/packages/release/bioc/html/affy.html) package. For a comparison of some of these
-methods and assessment of their performance on different control data sets, see [Bolstad et al](http://bioinformatics.oxfordjournals.org/content/19/2/185.long) or [Millenaar et al](http://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-7-137). In
-this practical we will use the ***RMA*** (Robust Multichip Averaging) method described in [Irizarry et al](http://www.ncbi.nlm.nih.gov/pubmed/12925520).
+The affy package provides lots of different ways to process raw Affymetricx data, one of which is an implementation of RMA. For other methods, see the `expresso` function or package *Vignette*
 
-Procedure;
 
-- model based background adjustment 
-- followed by quantile normalisation and a 
-- robust summary method (median polish) on the log$_2$ PM intensities 
-- to obtain *probeset summary values*.
-
+```{r eval=FALSE}
+?expresso
+vignette("affy")
+```
 
 The result is an `ExpressionSet`, which is a ubiquitous object in Biooconductor for storing high-throughput data. Later-on in the course will we import data from public repositories, and these data will often be in a normalised form.
 

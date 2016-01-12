@@ -135,23 +135,12 @@ There is a vast amount of [Illumina](http://www.ncbi.nlm.nih.gov/geo/query/acc.c
 
 - Experimental Design
 - Quality assessment
-    + NGS technologies
 - Normalisation
 - Statistical testing
 - Clustering classification etc
 
 Microarray data are much more manageable in size. We can work with decent-sized experiments (~100s of samples) and learn about high-dimensional analysis techniques
 
-
-![BioC](images/logo_bioconductor.png)
-
-- Packages analyse all kinds of Genomic data (>800)
-- Compulsory documentation (*vignettes*) for each package
-- 6-month release cycle
-- Course Materials
-- Example data and workflows
-- Common, re-usable framework and functionality
-- Available Support
 
 ## Advantages of R
 
@@ -173,8 +162,9 @@ The main advantages are;
 
 ## Support for R
 
-- Online forums
-- Local user groups
+- Online forums such as [Stack Overflow](http://stackoverflow.com/questions/tagged/r) regularly feature R
+- [Blogs](http://www.r-bloggers.com/)
+- Local [user groups](http://www.meetup.com/Cambridge-R-Users-Group-Meetup/) 
 - Documentation via `?` or `help.start()`
 
 ## RStudio
