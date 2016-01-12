@@ -29,7 +29,9 @@ Several breast cancer datasets have been curated for use with the genefu package
 
 also
 
-- curateBreastData
+- curatedBreastData
+
+******
 
 # Data from Gene Expression Omnibus (GEO)
 
@@ -85,6 +87,7 @@ pd <- pData(mydata)
 View(pd)
 ```
 
+******
 
 # Data from ArrayExpress
 
@@ -95,9 +98,11 @@ bclines <- getAE("E-GEOD-69017")
 mydata <- ae2bioc(bclines)
 ```
 
-
+******
 
 # Data from TCGA
+
+******
 
 # Data from cbioportal
 

@@ -88,8 +88,9 @@ img {
 </ul>
 <p>also</p>
 <ul>
-<li>curateBreastData</li>
+<li>curatedBreastData</li>
 </ul>
+<hr />
 </div>
 </div>
 <div id="data-from-gene-expression-omnibus-geo" class="section level1">
@@ -182,6 +183,7 @@ mydata &lt;- getGEO(filename=&quot;GSE3156_series_matrix.txt.gz&quot;)</code></p
 ## [27] &quot;relation&quot;</code></pre>
 <pre class="r"><code>pd &lt;- pData(mydata)
 View(pd)</code></pre>
+<hr />
 </div>
 </div>
 <div id="data-from-arrayexpress" class="section level1">
@@ -190,9 +192,11 @@ View(pd)</code></pre>
 sets &lt;- queryAE(keywords = &quot;breast+cancer&quot;,species=&quot;homo+sapiens&quot;)
 bclines &lt;- getAE(&quot;E-GEOD-69017&quot;)
 mydata &lt;- ae2bioc(bclines)</code></pre>
+<hr />
 </div>
 <div id="data-from-tcga" class="section level1">
 <h1>Data from TCGA</h1>
+<hr />
 </div>
 <div id="data-from-cbioportal" class="section level1">
 <h1>Data from cbioportal</h1>
