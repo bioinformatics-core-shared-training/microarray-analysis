@@ -30,3 +30,9 @@ Materials on the analysis of microarray expression data; focus on re-analysis of
 - Clustering, PCA, (survival?)
 
 - Existing prac
+
+
+Use this?
+
+source("https://bioconductor.org/biocLite.R")
+biocLite("Affyhgu133Plus2Expr")

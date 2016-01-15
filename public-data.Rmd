@@ -45,7 +45,7 @@ With this identifier, we can use the GEOquery Bioconductor package
 library(GEOquery)
 ```
 
-
+## Example 1. General procedure
 
 Lets say we have identified a dataset which has breast cancer cell lines. The web page describing these data is [here](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE3156). The main function we need to use is `getGEO`. This downloads the *series* file for the dataset and parses the data in this file into a format that is compatible with Bioconductor. 
 
@@ -54,7 +54,16 @@ mydata <- getGEO("GSE3156")
 mydata
 ```
 
+sometimes datasets in GEO can include more than one platform (technology).
+
+```{r eval=FALSE}
+mydata[[1]]
+```
+
+
 We can choose to download to disk first. On the [page](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE3156) for the dataset you should see there is a link to the **Series Matrix File(s)**. You can copy and paste this link into R and use the `download.file` function to get data from the URL to disk. GEOquery is then able to read from this file in future using the filename argument. 
+
+Advantage is that you don't need an internet connection to run your script
 
 ```{r cache=TRUE}
 remotefile <- 'ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE3nnn/GSE3156/matrix/GSE3156_series_matrix.txt.gz'
@@ -69,6 +78,64 @@ The structure of the `mydata` object should be quite familiar to you. The expres
 exprs(mydata)[1:5,1:5]
 ```
 
+## Example 1.1
+
+Since `exprs` returns a numeric data frame, there are a number of in-built operations we can use
+
+```{r}
+evalues <- log2(exprs(mydata))
+summary(evalues)
+```
+
+*** why do we do log$_2$ here ***
+
+We have already seen the boxplot as a useful quality assessment tool. It is worth being skeptical and checking the data you download from GEO
+
+```{r}
+boxplot(evalues)
+```
+
+
+`rowMeans` is a useful and very efficient function to get the mean of every row in a matrix. The result is a *vector*. 
+
+```{r}
+probeMeans <- rowMeans(evalues)
+summary(probeMeans)
+hist(probeMeans)
+```
+
+```{r}
+which(probeMeans > 14.5)
+which(probeMeans < 2)
+```
+
+A generic useful function to compute the same function for each row (or column) in a matrix is `apply`. If we wanted to calculate the standard deviation for a particular row of a matrix, we would use `sd`. Clearly, it would be tedious to do this for each row. This is where `apply` comes in.
+
+We need to give it
+
+- A matrix that we want to work with
+- A indication of whether we want by-row (1), or by-column (2) output
+- A function; which should take vectors as input and output
+
+```{r}
+sd(evalues[1,])
+sd(evalues[2,])
+sd(evalues[3,])
+
+probeSd <- apply(evalues, 1, sd)
+probeSd[1:3]
+
+hist(probeSd)
+```
+
+
+```{r}
+plot(probeMeans, probeSd)
+```
+
+
+## Example 1.2 - Dealing with gene annotation
+
 The annotation for the features can be retrieved by using `fData`. Because of the strict submission process, all the rows of this feature matrix are in the same order as the expression matrix; which greatly-simplifies further analysis
 
 ```{r}
@@ -77,15 +144,137 @@ colnames(fData(mydata))
 all(rownames(fData(mydata)) == rownames(exprs(mydata)))
 ```
 
+Although this is an Affymetrix experiment, the `annotation` is set to `r annotation(mydata)`, which is the GEO identifier for this paticular platform. All experiments in GEO run on this platform get annotated with the same table (a *SOFT* file). During the process of importing the dataset, `GEOquery` will automatically download this *SOFT* file for you.
+
 ```{r}
-pData(mydata)[1:5,1:5]
-colnames(pData(mydata))
+features <- fData(mydata)
 ```
+
+
+Recall that a particular column from the feature matrix can be retrieved using the `$` syntax. The results will be a vector with a length corresponding to the number of genes in the experiment (in this case `r nrow(fData(mydata))`). So take care if running this line of code! We probably won't want to print all IDs to the screen, but we may wish to save as a variable in further analysis.
+
+```{r eval=FALSE}
+colnames(features)
+```
+
+
+## Exercise
+
+- How many unique Entrez gene IDs are there?
+- How many features do not have an associated Entrez ID
+- Which Entrez ID has the most probes?
+- What probes are used for the gene *TP53*
+
+```{r}
+length(unique(features$ENTREZ_GENE_ID))
+```
+
+The sample information can be obtained by using the `pData` function
 
 ```{r}
 pd <- pData(mydata)
+```
+
+## Example 1.3 Filtering the expression data
+
+From our answers, we should note that 
+
+1) some genes do not have an Entrez ID
+2) some genes have multiple probes
+
+Quite often for an expression analysis we want
+
+- to map to other annotation sources using Entrez ID
+- measurements from reliable annotation sources
+- one measurement per gene
+
+Therefore, it makes sense to
+
+- exclude probes with no Entrez gene identifier
+- collapse multiple probes to one
+    + alternatively, choose one probe per-gene
+    
+***check that you understand why these give the same result**
+
+```{r}
+noEntrez <- which(features$ENTREZ_GENE_ID == "")
+mydata.filt <- mydata[-noEntrez,]
+dim(mydata.filt)
+
+hasEntrez <- which(features$ENTREZ_GENE_ID != "")
+mydata.filt <- mydata[hasEntrez,]
+dim(mydata.filt)
+```
+
+As it turns out, the `genefilter` package has some useful features for doing this.
+
+```{r}
+annotation(mydata) <- "hgu133a"
+```
+
+## Example 2. Dealing with large cohorts
+
+For this second example, we will import a patient cohort
+```{r}
+remotefile <- 'ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE18nnn/GSE18088/matrix/GSE18088_series_matrix.txt.gz'
+download.file(remotefile, destfile="data/GSE18088_series_matrix.txt.gz")
+cohort <- getGEO(filename="data/GSE18088_series_matrix.txt.gz")
+cohort
+```
+
+As before, we can query the expression matrix and features
+
+```{r}
+head(exprs(cohort))
+head(fData(cohort)[,1:5])
+```
+
+But an extra feature of this dataset is the availability of clinical information
+
+```{r}
+pData(cohort)[1:5,1:5]
+colnames(pData(cohort))
+```
+
+```{r}
+pd <- pData(cohort)
 View(pd)
 ```
+
+The interesting columns tend to be in columns starting "characteristics_"
+
+```{r}
+pd[,10:16]
+```
+
+- How many males and females are there in the study?
+- How many of the patients relapsed?
+
+```{r}
+table(pd$characteristics_ch1.1)
+table(pd$characteristics_ch1.2)
+```
+
+- What is the age distribution of the samples?
+
+This is more tricky
+
+```{r}
+pd$characteristics_ch1.4
+```
+
+```{r}
+clinvars <- pd[,10:16]
+clinvars$characteristics_ch1.4 <- gsub("age at diagnosis, years: ","",clinvars$characteristics_ch1.4)
+```
+
+- Clean-up the gender column
+
+```{r}
+hist(as.numeric(clinvars$characteristics_ch1.4))
+```
+
+
 
 ******
 
@@ -121,8 +310,8 @@ Lets say we're interested in Breast cancer from TCGA
 
 ```{r}
 studies <- getCancerStudies(mycgds)
-studies[15,]
-mystudy <- studies[15,1]
+studies[17,]
+mystudy <- studies[17,1]
 ```
 
 What cases to use? Each study will have different list of cases
