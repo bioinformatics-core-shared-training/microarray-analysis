@@ -1,0 +1,142 @@
+---
+title: "R recap"
+author: "Mark Dunning"
+date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
+output: html_document
+---
+
+We will be using the `wakefield` R package
+
+```{r eval=FALSE}
+install.packages("wakefield")
+```
+
+
+
+```{r}
+library(wakefield)
+```
+
+
+```{r}
+random_patients <- function(n) {
+  as.data.frame(r_data_frame(
+    n,
+    id,
+    name,
+    race,
+    sex,
+    smokes,
+    height,
+    birth(random = TRUE, x = NULL, start = Sys.Date() - 365 * 45, k = 365*2,by = "1 days"),
+    state,
+    pet,
+    grade_level(x=1:3),
+    died,    
+    normal(name="Count"),
+    date_stamp)
+  )
+}
+
+```
+
+
+Use the `random_patients` function to generate a data frame of fictitious patients
+
+```{r}
+patients <- random_patients(10)
+```
+
+In RStudio, you can view the contents of this data frame in a tab.
+
+```{r eval=FALSE}
+View(patients)
+```
+
+## What are the dimensions of the data frame?
+
+## What columns are available?
+
+```{r}
+dim(patients)
+colnames(patients)
+```
+
+## Can you think of two ways to access the Names of the patients?
+## What type of object is returned?
+
+```{r}
+patients$Name
+patients[,2]
+```
+
+We can access the columns of a data frame by either
+
+- knowing the column index
+- knowing the column name
+
+By column name is recommended, unless you can guarentee the columns will also be in the same order
+***TOP TIP:*** Use auto-complete with the <TAB> key to get the name of the column correct
+
+A vector (1-dimensional) is returned.
+
+## What information is contained in each column?
+
+```{r}
+summary(patients)
+```
+
+## How can we view information about the first six patients?
+
+The following are all *valid* ways of viewing the first six patients
+
+`head` is commonly-used to give a 
+
+```{r}
+head(patients)
+patients[c(1,2,3,4,5,6),]
+patients[1:6,]
+```
+
+***Note that the data frame is not altered***
+
+```{r}
+patients
+```
+
+
+## Subsetting
+
+```{r}
+deceased <- patients[patients$Died == TRUE,]
+deceased
+```
+
+## Can you create a data frame of smokers?
+
+
+```{r}
+dog_owners <- patients[patients$Pet == "Dog",]
+dog_owners
+```
+
+
+## Simple plotting
+
+```{r}
+hist(patients$Height)
+```
+
+```{r}
+barplot(table(patients$Race))
+```
+
+```{r}
+barplot(table(patients$Pet))
+```
+
+
+```{r}
+boxplot(patients$Count ~ patients$Died)
+```
+
