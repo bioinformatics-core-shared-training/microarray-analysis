@@ -1,0 +1,9 @@
+Name	FileName	Target	estrogen	time.h
+low10A	low10-1.cel	neg10h	absent	10
+low10B	low10-2.cel	neg10h	absent	10
+hi10A	high10-1.cel	est10h	present	10
+hi10B	high10-2.cel	est10h	present	10
+low48A	low48-1.cel	neg48h	absent	48
+low48B	low48-2.cel	neg48h	absent	48
+hi48A	high48-1.cel	est48h	present	48
+hi48B	high48-2.cel	est48h	present	48
