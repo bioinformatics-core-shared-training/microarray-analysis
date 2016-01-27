@@ -5,18 +5,60 @@ date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
 output: html_document
 ---
 
-We will be using the `wakefield` R package
+In this session we will review some of the basic features of the R language, before proceeding more-complicated workflows required for the analysis of microarray, and other high-throughput data.
+
+We recommend using the RStudio GUI for this course.
+
+## Getting help with R
+
+R has an in-built help system. At the *console*, you can type `?` followed by the name of a function. This will bring-up the documentation for the function; which includes the expected inputs (*arguments*), the output you should expect from the function and some use-cases.
+
+```{r eval=FALSE}
+?mean
+```
+
+More-detailed information on particular packages is also available (see below)
+
+## R packages
+
+The **Packages** tab in the bottom-right panel of RStudio lists all packages that you currently have installed. Clicking on a package name will show a list of functions that available once that package has been loaded. The `library` function is used to load a package and make it's functions / data available in your current R session. *You need to do this every time you load a new RStudio session*. 
+
+
+```{r eval=FALSE}
+library(beadarray)
+```
+
+There are functions for installing packages within R. If your package is part of the main **CRAN** repository, you can use `install.packages`
+
+We will be using the `wakefield` R package in this practical. To install it, we do.
 
 ```{r eval=FALSE}
 install.packages("wakefield")
 ```
 
+*Bioconductor* packages have their own install script, which you can download from the Bioconductor website
+
+```{r eval=FALSE}
+source("http://www.bioconductor.org/biocLite.R")
+biocLite("affy")
+```
+
+A package may have several *dependancies*; other R packages from which it uses functions or data types (re-using code from other packages is strongly-encouraged). If this is the case, the other R packages will be located and installed too.
+
+So long as you stick with the same version of R, you won't need to repeat this install process.
+
+
+## Getting started
+We are going to explore some of the basic features of R using some patient data; the kind of data we might encounter. However, rather than using real-life data we are going to make some up. There is a pacakge called `wakefield` that is particularly convenient for this task.
 
 
 ```{r}
 library(wakefield)
 ```
 
+Various patient characteristics can be generated. The following is a function that uses the package to create a *data frame* with various clinical characteristics. The number of patients we want to simulate is an argument.
+
+Don't worry about what the function does, you can just paste the following into the R console, or 
 
 ```{r}
 random_patients <- function(n) {
@@ -41,23 +83,31 @@ random_patients <- function(n) {
 ```
 
 
-Use the `random_patients` function to generate a data frame of fictitious patients
+We can now use the `random_patients` function to generate a data frame of fictitious patients
 
 ```{r}
 patients <- random_patients(10)
 ```
 
-In RStudio, you can view the contents of this data frame in a tab.
+In Rstudio , you can view the contents of this data frame in a tab.
 
 ```{r eval=FALSE}
 View(patients)
 ```
 
-## What are the dimensions of the data frame?
 
-## What columns are available?
+******
 
-```{r}
+## Q. What are the dimensions of the data frame?
+
+## Q. What columns are available?
+
+***HINT: see the `dim`, `ncol`, `nrow` and `colnames` functions
+
+******
+
+
+```{r echo=FALSE}
 dim(patients)
 colnames(patients)
 ```
@@ -65,7 +115,7 @@ colnames(patients)
 ## Can you think of two ways to access the Names of the patients?
 ## What type of object is returned?
 
-```{r}
+```{r echo=FALSE}
 patients$Name
 patients[,2]
 ```
@@ -82,40 +132,95 @@ A vector (1-dimensional) is returned.
 
 ## What information is contained in each column?
 
+The `summary` function is a useful way of summarising the data containing in each column. It will give information about the *type* of data (remember, data frames can have a mixture of numeric and character columns) and also an appropriate summary. For numeric columns, it will report some stats about the distribution of the data. For categorical data, it will report the different *levels*.
+
+
 ```{r}
 summary(patients)
 ```
 
-## How can we view information about the first six patients?
 
-The following are all *valid* ways of viewing the first six patients
+## Subsetting
 
-`head` is commonly-used to give a 
+A data frame can be subset using square brackes`[]` placed after the name of the data frame. As a data frame is a two-dimensional object, you need a *row* and *column* index, or vector indices. 
 
-```{r}
-head(patients)
-patients[c(1,2,3,4,5,6),]
-patients[1:6,]
+******
+Q. Make sure you can understand the behaviour of the following commands
+******
+
+```{r eval=FALSE}
+patients[1,2]
+patients[2,1]
+patients[c(1,2,3),1]
+patients[c(1,2,3),c(1,2,3)]
 ```
 
-***Note that the data frame is not altered***
+***Note that the data frame is not altered*** we are just seeing what a subset of the data looks like and not changing the underlying data. If we wanted to do this, we would need to create a new variale.
 
 ```{r}
 patients
 ```
 
 
-## Subsetting
+
+Should we wish to see all rows, or all columns, we can neglect either the row or column index
+
+******
+Q. Make sure you can understand the behaviour of the following commands
+******
+
+
+```{r}
+patients[1,]
+patients[,1]
+patients[,c(1,2)]
+```
+
+
+
+******
+## Q. How can we view all information about the first six patients?
+
+***HINT*** `head` is commonly-used to give a snapshot of a data frame.
+
+******
+The following are all *valid* ways of viewing the first six patients
+
+```{r echo=FALSE}
+head(patients)
+```
+
+Rather than selecting rows based on their *numeric* index (as in the previous example) we can use what we call a *logical test*. This is a test that gives either a `TRUE` or `FALSE` result. When applied to subsetting, only rows with a `TRUE` result get returned.
+
+For example we could compare the `Count` variable to zero. The result is a *vector* of `TRUE` or `FALSE`; one for each row in the data frame
+
+
+```{r}
+patients$Count < 0
+```
+
+
+
 
 ```{r}
 deceased <- patients[patients$Died == TRUE,]
 deceased
 ```
 
-## Can you create a data frame of smokers?
-
+In fact, this is equivalent
 
 ```{r}
+deceased <- patients[patients$Died,]
+```
+
+
+******
+## Q. Can you create a data frame of dog owners?
+
+******
+
+
+```{r echo=FALSE}
 dog_owners <- patients[patients$Pet == "Dog",]
 dog_owners
 ```
