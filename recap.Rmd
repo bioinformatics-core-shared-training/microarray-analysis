@@ -112,9 +112,11 @@ dim(patients)
 colnames(patients)
 ```
 
-## Can you think of two ways to access the Names of the patients?
-## What type of object is returned?
+******
+## Q. Can you think of two ways to access the Names of the patients?
+## Q. What type of object is returned?
 
+******
 ```{r echo=FALSE}
 patients$Name
 patients[,2]
@@ -128,9 +130,16 @@ We can access the columns of a data frame by either
 By column name is recommended, unless you can guarentee the columns will also be in the same order
 ***TOP TIP:*** Use auto-complete with the <TAB> key to get the name of the column correct
 
-A vector (1-dimensional) is returned.
+A vector (1-dimensional) is returned, the length of which is the same as the number of rows in the data frame. The vector could be stored as a variable and itself be subset or used in further calculations
 
-## What information is contained in each column?
+```{r}
+peeps <- patients$Name
+peeps
+length(peeps)
+nchar(peeps)
+```
+
+
 
 The `summary` function is a useful way of summarising the data containing in each column. It will give information about the *type* of data (remember, data frames can have a mixture of numeric and character columns) and also an appropriate summary. For numeric columns, it will report some stats about the distribution of the data. For categorical data, it will report the different *levels*.
 
@@ -139,6 +148,13 @@ The `summary` function is a useful way of summarising the data containing in eac
 summary(patients)
 ```
 
+******
+## Q. Can you identify
+### which columns contain numerical data?
+### which columns contain categorical data?
+### which columns contain logical (`TRUE` or `FALSE`) values?
+    
+******
 
 ## Subsetting
 
@@ -166,7 +182,7 @@ patients
 Should we wish to see all rows, or all columns, we can neglect either the row or column index
 
 ******
-Q. Make sure you can understand the behaviour of the following commands
+## Q. Make sure you can understand the behaviour of the following commands
 ******
 
 
@@ -213,6 +229,12 @@ In fact, this is equivalent
 deceased <- patients[patients$Died,]
 ```
 
+The test of equality `==` also works for text
+
+```{r}
+patients[patients$Race == "White",]
+```
+
 
 ******
 ## Q. Can you create a data frame of dog owners?
@@ -224,6 +246,54 @@ deceased <- patients[patients$Died,]
 dog_owners <- patients[patients$Pet == "Dog",]
 dog_owners
 ```
+
+There are a couple of ways of testing for more than one text value. The first uses an *or* `|` statement. i.e. testing if the value of `Pet` is `Dog` *or* the value is `Cat`.
+
+```{r}
+patients[patients$Pet == "Dog" | patients$Pet == "Cat",]
+patients[patients$Pet %in% c("Dog","Cat"),]
+```
+
+Similar to *or*, we can require that both tests are `TRUE` by using an *and* `&` operation. e.g. to look for white males.
+
+```{r}
+patients[patients$Race == "White" & patients$Sex =="Male",]
+```
+
+
+
+******
+## Q. Can you create a data frame of deceased patients with a 'count' < 0
+
+******
+
+```{r echo=FALSE}
+patients[patients$Count <0 & patients$Died,]
+```
+
+## Ordering and sorting
+
+A vector can be returned in sorted form using the `sort` function.
+
+```{r}
+sort(peeps)
+sort(patients$Count,decreasing = TRUE)
+```
+
+However, if we want to sort an entire data frame a different approach is needed. The trick is to use `order`. Rather than giving a sorted set of *values*, it will give sorted *indices*. 
+
+```{r}
+patients[order(patients$Count),]
+patients[order(patients$Sex),]
+```
+
+A final point on data frames is that we can export them out of R once we have done our data processing. 
+
+```{r}
+countOrder <- patients[order(patients$Count),]
+write.csv(countOrder, file="patientsOrderedByCount.csv")
+```
+
 
 
 ## Simple plotting
