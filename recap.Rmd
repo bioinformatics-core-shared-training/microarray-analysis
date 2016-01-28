@@ -49,7 +49,7 @@ So long as you stick with the same version of R, you won't need to repeat this i
 
 
 ## Getting started
-We are going to explore some of the basic features of R using some patient data; the kind of data we might encounter. However, rather than using real-life data we are going to make some up. There is a pacakge called `wakefield` that is particularly convenient for this task.
+We are going to explore some of the basic features of R using some patient data; the kind of data that we might encounter in the wild. However, rather than using real-life data we are going to make some up. There is a pacakge called `wakefield` that is particularly convenient for this task.
 
 
 ```{r}
@@ -102,8 +102,8 @@ View(patients)
 
 ## Q. What columns are available?
 
-***HINT: see the `dim`, `ncol`, `nrow` and `colnames` functions
-
+*** HINT: see the `dim`, `ncol`, `nrow` and `colnames` functions
+ 
 ******
 
 
@@ -128,6 +128,7 @@ We can access the columns of a data frame by either
 - knowing the column name
 
 By column name is recommended, unless you can guarentee the columns will also be in the same order
+
 ***TOP TIP:*** Use auto-complete with the <TAB> key to get the name of the column correct
 
 A vector (1-dimensional) is returned, the length of which is the same as the number of rows in the data frame. The vector could be stored as a variable and itself be subset or used in further calculations
@@ -137,6 +138,7 @@ peeps <- patients$Name
 peeps
 length(peeps)
 nchar(peeps)
+substr(peeps,1,3)
 ```
 
 
@@ -161,7 +163,7 @@ summary(patients)
 A data frame can be subset using square brackes`[]` placed after the name of the data frame. As a data frame is a two-dimensional object, you need a *row* and *column* index, or vector indices. 
 
 ******
-Q. Make sure you can understand the behaviour of the following commands
+## Q. Make sure you can understand the behaviour of the following commands
 ******
 
 ```{r eval=FALSE}
@@ -197,10 +199,10 @@ patients[,c(1,2)]
 ******
 ## Q. How can we view all information about the first six patients?
 
-***HINT*** `head` is commonly-used to give a snapshot of a data frame.
+*** HINT `head` is commonly-used to give a snapshot of a data frame.
+Otherwise, you can use the `[row,column]` notation.
 
 ******
-The following are all *valid* ways of viewing the first six patients
 
 ```{r echo=FALSE}
 head(patients)
@@ -215,8 +217,13 @@ For example we could compare the `Count` variable to zero. The result is a *vect
 patients$Count < 0
 ```
 
+This R code can be put inside the square brackets.
 
+```{r}
+patients[patients$Count<0, ]
+```
 
+If we wanted to know about the patients that had died, we could do;
 
 ```{r}
 deceased <- patients[patients$Died == TRUE,]
@@ -248,6 +255,8 @@ dog_owners
 ```
 
 There are a couple of ways of testing for more than one text value. The first uses an *or* `|` statement. i.e. testing if the value of `Pet` is `Dog` *or* the value is `Cat`.
+
+The `%in%` function is a convenient function for testing which items in a vector correspond to a defined set of values.
 
 ```{r}
 patients[patients$Pet == "Dog" | patients$Pet == "Cat",]
@@ -298,9 +307,17 @@ write.csv(countOrder, file="patientsOrderedByCount.csv")
 
 ## Simple plotting
 
+Various simple plots are supported in the *base* distribution of R (what you get automatically when you download R). In the course, we will show how some of these plots can be used to inform us about the quality of microarray data, and to visualise our results. 
+
 ```{r}
 hist(patients$Height)
 ```
+
+
+```{r}
+plot(patients$Height,patients$Count)
+```
+
 
 ```{r}
 barplot(table(patients$Race))
@@ -315,3 +332,25 @@ barplot(table(patients$Pet))
 boxplot(patients$Count ~ patients$Died)
 ```
 
+*Lots* of customisations are possible to enhance the appaerance of our plots; colour, labels, axes, legends
+
+```{r}
+plot(patients$Height,patients$Count,pch=16,
+     col="red",xlab="Height",
+     ylab="Count")
+```
+
+
+```{r}
+boxplot(patients$Count ~ patients$Died,col=c("red","yellow"))
+```
+
+Plots can be exported by the ***Plots*** tab in RStudio, or by calling the `pdf` or `png` functions which will write the plot to a file
+
+ 
+ 
+```{r}
+png("myLittlePlot.png")
+barplot(table(patients$Pet))
+dev.off()
+```
