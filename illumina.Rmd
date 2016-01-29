@@ -150,10 +150,27 @@ eset.norm <- normaliseIllumina(eset.ill[,c(1:6,9:12)])
 
 ## Alternative data import
 
-(from limma users guide)
+A workflow to import and normalise data that have been exported from Illumina's GenomeStudio software is described in Section 17.3 of the [limma users guide](http://www.bioconductor.org/packages/release/bioc/vignettes/limma/inst/doc/usersguide.pdf)
+
+
 
 ```{r}
-library(lumi)
+library(limma)
+ x <- read.ilmn(files="data/probe profile.txt",ctrlfiles="data/control probe profile.txt",
+ other.columns="Detection")
+ x
+ head(x$E)
 ```
 
+```{r}
+boxplot(log2(x$E),range=0,ylab="log2 intensity")
+```
+
+
+
+```{r}
+y <- neqc(x)
+head(y$E)
+boxplot(y$E,range=0,ylab="log2 intensity")
+```
 
