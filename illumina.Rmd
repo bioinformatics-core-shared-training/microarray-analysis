@@ -77,7 +77,7 @@ ht12metrics
 ht12snr <- ht12metrics$P95Grn / ht12metrics$P05Grn
 plot (1:12 , ht12snr , pch = 19 , ylab = " P95 / P05 " , xlab = " " ,main = " Signal - to - noise ratio for HT12 data ")
 axis (2)
-axis (1 , 1:12 , labs , las = 2)
+
 ```
 
 
@@ -117,7 +117,6 @@ combinedControlPlot(data)
 
 
 Now we can summarise the data into a more-usable form
-
 
 
 ```{r cache=TRUE,echo=FALSE}
@@ -166,7 +165,7 @@ library(limma)
 boxplot(log2(x$E),range=0,ylab="log2 intensity")
 ```
 
-
+A popular choice for the normalisation of Illumina data is [*neqc*](http://www.ncbi.nlm.nih.gov/pmc/articles/PMC3001098/). This incorporates a background correction step, log$_2$ transformation and quantile normalisation. 
 
 ```{r}
 y <- neqc(x)

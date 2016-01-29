@@ -239,7 +239,7 @@ cohort
 As before, we can query the expression matrix and features
 
 ```{r}
-head(exprs(cohort))
+head(exprs(cohort)[,1:5])
 head(fData(cohort)[,1:5])
 ```
 

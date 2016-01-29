@@ -49,7 +49,7 @@ So long as you stick with the same version of R, you won't need to repeat this i
 
 
 ## Getting started
-We are going to explore some of the basic features of R using some patient data; the kind of data that we might encounter in the wild. However, rather than using real-life data we are going to make some up. There is a pacakge called `wakefield` that is particularly convenient for this task.
+We are going to explore some of the basic features of R using some patient data; the kind of data that we might encounter in the wild. However, rather than using real-life data we are going to make some up. There is a package called `wakefield` that is particularly convenient for this task.
 
 
 ```{r}
