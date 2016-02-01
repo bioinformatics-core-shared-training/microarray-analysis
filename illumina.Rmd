@@ -1,7 +1,7 @@
 ---
 title: "Illumina"
 author: "Mark Dunning"
-date: "20/11/2015"
+date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
 output: html_document
 ---
 
@@ -23,6 +23,9 @@ library(beadarray)
 + Around 20 replicates on most-recent arrays
 
 ![abead](images/abead.png)
+
+
+## Different chip types
 
 ![illumina-chips](images/chiptypes.png)
 
@@ -70,6 +73,8 @@ If you have bead-level data, then for each hybridisation you will have;
 
 ## Workflow from bead-level data
 
+The scanner software produces a simple tab-delimited file as the arrays are being scanner. This turns-out to be a particularly good early-warning of problems. Specifically it records the 5th and 95th percentile of intensities which can be used as a measure of the signal-to-noise ratio. At some point, Illumina stated that ratio of these two numbers should be [at least *10*](http://www.illumina.com/documents/products/technotes/technote_gene_expression_data_quality_control.pdf). 
+
 ```{r}
 ht12metrics <- read.table(system.file("extdata/Chips/Metrics.txt" ,
   package = "BeadArrayUseCases") , sep = "\t" , header = TRUE ,as.is = TRUE )
@@ -80,7 +85,9 @@ axis (2)
 
 ```
 
+The `beadarray` Bioconductor package can be used to read Illumina bead-level data. It assumes the files are arranged in the same folder structure that is created by the scanner software; one folder for each chip, named according to the name of the chip.
 
+Each chip type has a different set of bead-types, so it is important to tell `beadarray` what annotation to use. In this case we choose `illuminaHumanv3`. 
 
 ```{r cache=TRUE}
 library(beadarray)
@@ -90,7 +97,6 @@ list.files(chipPath)
 sampleSheetFile <- paste0(chipPath,"/sampleSheet.csv")
 data <- readIllumina(dir=chipPath,sampleSheet=sampleSheetFile,illuminaAnnotation="Humanv3")
 ```
-
 
 
 Just like with Affy data, we can visualise the raw images.
@@ -104,22 +110,29 @@ imageplot(data, array=6,high="darkgreen",low="lightgreen",zlim=c(4,10))
 imageplot(data, array=8,high="darkgreen",low="lightgreen",zlim=c(4,10))
 ```
 
-
-
 We could use [***BASH***](http://bioinformatics.oxfordjournals.org/content/24/24/2921.full) which we don't cover today
 
-```{r}
-combinedControlPlot(data)
-```
+Illumina put a number (~700) so-called *negative-controls* on each array. The probe sequences used are not supposed to hybridise to any location of the genome so therefore should just be measuring "*background*". Additionally, several "*housekeeping*" genes are used which should be highly-expressed on any tissue-type. We can exploit the values of these controls for QA purposes; the housekeeping controls should always be high intensity and the negative controls should have low signal. There should be a large difference between the two extremes.
 
+
+```{r eval=FALSE}
+combinedControlPlot(data,array=1)
+combinedControlPlot(data,array=7)
+combinedControlPlot(data,array=8)
+```
 
 ## Summarisation
 
 
-Now we can summarise the data into a more-usable form
+Now we can summarise the data into a more-usable form. Recall that there are ~30 measurements for each bead-type and we would prefer to work with a single, reliable, value for each bead-type (gene). 
 
+- Take a log$_2$ transformation of all the recorded observations.
+- Remove any "outliers" ( > 3 [median-absolute-deviations](https://en.wikipedia.org/wiki/Median_absolute_deviation) from the median)
+- Take the mean and standard deviation of the remaining beads
 
-```{r cache=TRUE,echo=FALSE}
+This procedure is taken care of by the `summarize` function.
+
+```{r cache=TRUE,echo=FALSE, results='hide'}
 eset.ill <- summarize(data)
 ```
 
@@ -149,7 +162,9 @@ eset.norm <- normaliseIllumina(eset.ill[,c(1:6,9:12)])
 
 ## Alternative data import
 
-A workflow to import and normalise data that have been exported from Illumina's GenomeStudio software is described in Section 17.3 of the [limma users guide](http://www.bioconductor.org/packages/release/bioc/vignettes/limma/inst/doc/usersguide.pdf)
+A more-common form for Illumina data to be distributed is the output of Illumina's GenomeStudio software. Data in this form have already been *summarised*. i.e. we get one measurement for each bead-type for each array. This format is naturally more-compatible with tools in Bioconductor. However, as we have already mentioned we lose some of the benefits of being able to control the whole analysis in R. 
+
+The *limma* package is one of the most highly-cited pacakges in Bioconductor, and as we will see later has some powerful tools for differential expression analysis. A workflow to import and normalise data that have been exported from GenomeStudio is described in Section 17.3 of the [limma users guide](http://www.bioconductor.org/packages/release/bioc/vignettes/limma/inst/doc/usersguide.pdf). 
 
 
 
@@ -161,15 +176,25 @@ library(limma)
  head(x$E)
 ```
 
+One downside of limma, is that the data are represented in a slightly different format to the rest of Bioconductor. So the `exprs` and `pData` functions cannot be used. Instead to retrieve the expression measurements we have to use `$E`. 
+
 ```{r}
 boxplot(log2(x$E),range=0,ylab="log2 intensity")
 ```
 
-A popular choice for the normalisation of Illumina data is [*neqc*](http://www.ncbi.nlm.nih.gov/pmc/articles/PMC3001098/). This incorporates a background correction step, log$_2$ transformation and quantile normalisation. 
+A popular choice for the normalisation of Illumina data is [*neqc*](http://www.ncbi.nlm.nih.gov/pmc/articles/PMC3001098/). This incorporates a background correction step, log$_2$ transformation and quantile normalisation. The background estimation uses the intensities from the *negative controls*. After the data have been transformed, these controls are then removed from the data.
 
 ```{r}
 y <- neqc(x)
 head(y$E)
 boxplot(y$E,range=0,ylab="log2 intensity")
+```
+
+Another use for the negative controls is to estimate the proportion of genes that are expressed in each sample. There should not be a significant difference in these proportions between samples. 
+
+```{r}
+pe <- propexpr(x)
+pe
+barplot(pe)
 ```
 

@@ -1,7 +1,7 @@
 ---
 title: "Affymetrix"
 author: "Mark Dunning"
-date: "20/11/2015"
+date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
 output: html_document
 ---
 
@@ -156,8 +156,8 @@ conclude about the overall quality of this experiment? Would you use all the dat
 downstream differential expression analysis?
 
 ```{r eval=FALSE}
-mva.pairs(pm(raw)[,1:4])
-mva.pairs(pm(raw)[,5:8])
+mva.pairs(pm(raw)[,1:4],plot.method="smoothScatter")
+mva.pairs(pm(raw)[,5:8],plot.method="smoothScatter")
 ```
 
 
@@ -278,6 +278,8 @@ ggplot(df, aes(x = A,y=M)) + geom_point() + geom_smooth() + geom_hline(yintercep
 This is arguably the most-popular normalisation method available. Consider the following matrix of values to be normalised
 
 ```{r echo=FALSE}
+# Set a seed to make sure we get the same matrix
+set.seed("15022016")
 df <- data.frame(Array1 = rnorm(5,mean = 2), Array2 = rnorm(5,mean=3), Array3 = rnorm(5,mean=4))
 rownames(df) <- LETTERS[1:nrow(df)]
 df
@@ -524,7 +526,7 @@ boxplot(exprs(eset),las=2)
 - How can you tell from the boxplot that these data have been normalised?
 
 ```{r}
-mva.pairs(exprs(eset)[,1:4])
+mva.pairs(exprs(eset)[,1:4],log.it = FALSE,plot.method="smoothScatter")
 ```
 
 If we have used a *targets* file to read the raw data, this information will stored in the summarised object. Commonly-referred to as "pheno data", this can retrieved using the `pData` function. A nice property of this data frame is that the *rows* are arranged in the same order as the *columns* of the expression matrix. i.e. The first column of the expression matrix is described in the first row of the pheno data matrix, and so on. 
@@ -548,6 +550,13 @@ arrayQualityMetrics(eset)
 ## Summary
 
 - Affy data come in `.cel` files that can be imported with the `affy` package
-- 
+- QC checks on the raw data include;
+    + check the chip image
+    + probe-level models
+    + boxplots
+- Affy data need to be summarised before further analysis
+    + `rma` (and variants thereof) is most-popular
+- Affy data can be summarised into a common Bioconductor object-type
+    + The "`ExpressionSet`"
 
 

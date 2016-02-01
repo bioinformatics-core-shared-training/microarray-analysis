@@ -1,7 +1,7 @@
 ---
 title: "Importing publicly available data"
 author: "Mark Dunning"
-date: "22 December 2015"
+date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
 output: html_document
 ---
 
