@@ -47,10 +47,10 @@ library(GEOquery)
 
 ## Example 1. General procedure
 
-Lets say we have identified a dataset which has breast cancer cell lines. The web page describing these data is [here](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE3156). The main function we need to use is `getGEO`. This downloads the *series* file for the dataset and parses the data in this file into a format that is compatible with Bioconductor. 
+Lets say we have identified a dataset which has leukemia patients. The web page describing these data is [here](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE1729). The main function we need to use is `getGEO`. This downloads the *series* file for the dataset and parses the data in this file into a format that is compatible with Bioconductor. 
 
 ```{r eval=FALSE}
-mydata <- getGEO("GSE3156")
+mydata <- getGEO("GSE1729")
 mydata
 ```
 
@@ -61,14 +61,15 @@ mydata[[1]]
 ```
 
 
-***The recommended approach*** is to download to disk first. On the [page](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE3156) for the dataset you should see there is a link to the **Series Matrix File(s)**. You can copy and paste this link into R and use the `download.file` function to get data from the URL to disk. GEOquery is then able to read from this file in future using the filename argument. 
+***The recommended approach*** is to download to disk first. On the [page](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE1729) for the dataset you should see there is a link to the **Series Matrix File(s)**. You can copy and paste this link into R and use the `download.file` function to get data from the URL to disk. GEOquery is then able to read from this file in future using the filename argument. 
 
 Advantage is that you don't need an internet connection to run your script
 
 ```{r cache=TRUE}
-remotefile <- 'ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE3nnn/GSE3156/matrix/GSE3156_series_matrix.txt.gz'
-download.file(remotefile, destfile="GSE3156_series_matrix.txt.gz")
-mydata <- getGEO(filename="GSE3156_series_matrix.txt.gz")
+remotefile <- 'ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE1nnn/GSE1729/matrix/GSE1729_series_matrix.txt.gz'
+destfile <- "data/GSE1729_series_matrix.txt.gz"
+if(!file.exists(destfile)) download.file(remotefile, destfile)
+mydata <- getGEO(filename="data/GSE1729_series_matrix.txt.gz")
 mydata
 ```
 
@@ -82,7 +83,7 @@ The structure of the `mydata` object should be quite familiar to you. The expres
 
 ```{r}
 exprs(mydata)[1:5,1:5]
-summary(exprs(mydata))
+summary(exprs(mydata)[,1:5])
 ```
 
 ## Example 1.1 Quality assessment of the downloaded data
@@ -101,6 +102,8 @@ The ***arrayQualityMetrics*** package can automatically-generate a variety of QA
 ## Q. Generate an arrayQualityMetrics report for the dataset. Do any arrays seem to be poor quality?
 
 The report should be generated in a folder called `arrayQualityMetrics report for mydata` (the name of the directory can be configured).
+
+N.B the `force=TRUE` argument will make sure that the output gets written if the specified directory name already exists
 ******
 
 ```{r message=FALSE,cache=TRUE,warning=FALSE}
@@ -145,6 +148,13 @@ subset
 
 So in order to remove one or more poor-quality arrays we need to know their indices.
 
+
+******
+## Q. Now create a new dataset with the poor quality arrays removed
+
+******
+
+
 Finally, when creating a subset of an `ExpressionSet` object, we can also filter on rows. e.g. to select the first 100 genes.
 
 ```{r}
@@ -177,6 +187,8 @@ colnames(features)
 ```
 
 
+******
+
 ## Exercise
 
 - How many unique Entrez gene IDs are there?
@@ -184,10 +196,7 @@ colnames(features)
 - Which Entrez ID has the most probes?
 - What probes are used for the gene *TP53*
 
-```{r}
-length(unique(features$ENTREZ_GENE_ID))
-```
-
+******
 
 ## Example 1.3 Filtering the expression data
 
@@ -202,13 +211,13 @@ Quite often for an expression analysis we want
 - measurements from reliable annotation sources
 - one measurement per gene
 
-Therefore, it makes sense to
+Therefore, it makes sense to;
 
 - exclude probes with no Entrez gene identifier
 - collapse multiple probes to one
     + alternatively, choose one probe per-gene
     
-***check that you understand why these give the same result**
+A simple strategy would be to use the `features` matrix and search for probes with missing *Entrez* ID.
 
 ```{r}
 noEntrez <- which(features$ENTREZ_GENE_ID == "")
@@ -220,18 +229,33 @@ mydata.filt <- mydata[hasEntrez,]
 dim(mydata.filt)
 ```
 
-As it turns out, the `genefilter` package has some useful features for doing this.
+As it turns out, the `genefilter` package has some useful features for exactly this task. Not only will it remove probes without an Entrez ID, but it will collapse probes for the same gene to a single value. It picks the "*best*" probe by using the *IQR* measured across the whole dataset. The reasoning being that we want to include the most-informative probe; the probe which shows the most variation. It is important to choose probes in this *non-specific* manner. Choosing probes with reference to the sample groups being investigated would bias and compromise the differential expression analysis.
+
+In order to run this function, we need to specify the name of the Bioconductor annotation package that corresponds to the chip type. In this case it is `hgu133a`.
 
 ```{r}
-annotation(mydata) <- "hgu133a2"
+library(genefilter)
+annotation(mydata)
+annotation(mydata) <- "hgu133a"
+mydata.annofilt <- featureFilter(mydata)
+mydata.annofilt
 ```
+
+Additionally, we can choose to filter probes based on their expression variability alone using the `varFilter` function. Again, this uses the *IQR* as it's measure of variability.
+
+```{r}
+mydata.exprFilt <- varFilter(mydata)
+mydata.exprFilt
+```
+
 
 ## Example 2. Dealing with large cohorts
 
 For this second example, we will import a patient cohort
 ```{r}
 remotefile <- 'ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE18nnn/GSE18088/matrix/GSE18088_series_matrix.txt.gz'
-download.file(remotefile, destfile="data/GSE18088_series_matrix.txt.gz")
+destfile <- "data/GSE18088_series_matrix.txt.gz"
+if(!file.exists(destfile)) download.file(remotefile, destfile)
 cohort <- getGEO(filename="data/GSE18088_series_matrix.txt.gz")
 cohort
 ```

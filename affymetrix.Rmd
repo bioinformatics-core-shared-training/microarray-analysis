@@ -74,9 +74,14 @@ raw <-ReadAffy(celfile.path = "estrogen", filenames=rownames(pData(pd)),phenoDat
 raw
 ```
 
-1) What type of Affy array is this
-2) How many features?
-3) How many samples?
+******
+## Q  What type of Affy array is this
+## Q How many features?
+## Q How many samples?
+
+******
+
+
 
 
 ## Diagnostic plots 
@@ -118,8 +123,11 @@ In Bioconductor, you will usually find that package authors have created shortcu
 boxplot(raw,col="red",las=2)
 ```
 
-* What do you notice from this plot?
+******
 
+##Q What do you notice from this plot?
+
+******
 
 
 ## Perfect-Match and Mismatch probes
@@ -150,10 +158,12 @@ probe from chip $i$ and X$_j$ is the intensity for the same probe on chip $j$, t
 $A = 1/2 (log_2(X_i) + log_2(X_j))$ and $M = log_2(X_i) − log_2(X_j)$ . In this experiment, there are 8 GeneChips, which gives
 28 distinct pair-wise comparisons between arrays. We will focus on a subset of these below.
 
-Make a pairs plot of the PM intensities from arrays 1-4 and 5-8 to compare the
-data from the replicate arrays. Based on all the plots you have generated, what would you
-conclude about the overall quality of this experiment? Would you use all the data in the
-downstream differential expression analysis?
+******
+
+##Q Make a pairs plot of the PM intensities from arrays 1-4 and 5-8 to compare the data from the replicate arrays. Based on all the plots you have generated, what would you conclude about the overall quality of this experiment? 
+## Q Would you use all the data in the downstream differential expression analysis?
+
+******
 
 ```{r eval=FALSE}
 mva.pairs(pm(raw)[,1:4],plot.method="smoothScatter")
@@ -522,12 +532,17 @@ boxplot(exprs(eset),las=2)
 ```
 
 
+******
+## Q How can you tell from the boxplot that these data have been normalised?
+******
 
-- How can you tell from the boxplot that these data have been normalised?
+An MA-plot can be repeated on the normalised data to verify that the normalisation procedure has been sucessful.
 
 ```{r}
 mva.pairs(exprs(eset)[,1:4],log.it = FALSE,plot.method="smoothScatter")
 ```
+
+
 
 If we have used a *targets* file to read the raw data, this information will stored in the summarised object. Commonly-referred to as "pheno data", this can retrieved using the `pData` function. A nice property of this data frame is that the *rows* are arranged in the same order as the *columns* of the expression matrix. i.e. The first column of the expression matrix is described in the first row of the pheno data matrix, and so on. 
 
@@ -538,8 +553,28 @@ rownames(pData(eset))
 ```
 
 
+Clustering techniques that we will meet later in the course can also inform decisions about experiment quality by providing a way of visualing relationships between sample groups.
+
+
+```{r echo=FALSE}
+suppressPackageStartupMessages(library(genefilter))
+eset.filt <- varFilter(eset)
+corMat <- 1- cor(exprs(eset.filt))
+plot(hclust(as.dist(corMat)))
+```
+
+```{r echo=FALSE}
+library(ggplot2)
+pca <- prcomp(exprs(eset))
+
+pd <- data.frame(pData(eset),pca$rotation)
+ggplot(pd, aes(x=PC1,y=PC2,col=estrogen,pch=as.factor(time.h))) + geom_point()
+```
+
+
 ## Automated QC
 
+The `arrayQualityMetrics` package is able to produce QA plots from set of cel files, or a normalised dataset.
 
 ```{r eval=FALSE}
 library(arrayQualityMetrics)
