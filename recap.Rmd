@@ -309,6 +309,8 @@ write.csv(countOrder, file="patientsOrderedByCount.csv")
 
 Various simple plots are supported in the *base* distribution of R (what you get automatically when you download R). In the course, we will show how some of these plots can be used to inform us about the quality of microarray data, and to visualise our results. 
 
+Plotting is discussed in greater length on our [introductory R course](http://cambiotraining.github.io/r-intro/) and a useful reference is the [Quick-R](http://www.statmethods.net/graphs/index.html) page.
+
 ```{r}
 hist(patients$Height)
 ```
