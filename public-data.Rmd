@@ -248,6 +248,7 @@ mydata.exprFilt <- varFilter(mydata)
 mydata.exprFilt
 ```
 
+It may seem odd to discard so many of our probes, but in reality only *about half* (?) of the genes in a study are going to be expreesed anyway. Reducing the dimensionality of the dataset also helps with *multiple-testing* concerns that arise during differential-expression analyses.
 
 ## Example 2. Dealing with large cohorts
 

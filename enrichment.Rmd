@@ -1,0 +1,223 @@
+---
+title: "Ontologies and Enrichment"
+author: "Mark Dunning"
+date: "4 February 2016"
+output: html_document
+---
+```{r echo=FALSE,message=FALSE}
+library(GEOquery)
+library(limma)
+```
+
+## Gene-Ontology Analysis
+
+In this section we give an example of how to find a list of relevant pathways / GO terms
+from a list of differentially-expressed genes. We will use the colon cancer data that we down-
+loaded from GEO.
+
+## Theory Part I
+
+## Importing the data
+
+```{r cache=TRUE}
+library(GEOquery)
+url <- "ftp://ftp.ncbi.nih.gov/pub/geo/DATA/SeriesMatrix/GSE33126/"
+filenm <- "GSE33126_series_matrix.txt.gz"
+if(!file.exists("GSE33126_series_matrix.txt.gz")) download.file(paste(url, filenm, sep=""), destfile=filenm)
+colonData <- getGEO(filename=filenm)
+colonData
+annotation(colonData) <- "illuminaHumanv3"
+colonData.filt <- varFilter(colonData)
+
+```
+
+```{r}
+exprs (colonData.filt) <- log2 (exprs(colonData.filt))
+SampleGroup <- pData(colonData)$source_name_ch1
+Patient <- pData(colonData)$characteristics_ch1.1
+```
+
+We've previously explained the following steps to produce a table of DE genes.
+
+```{r}
+design <- model.matrix(~0+SampleGroup)
+design
+colnames(design) <- c("Normal","Tumour")
+
+fit <- lmFit(exprs(colonData.filt), design)
+
+contrasts <- makeContrasts(Tumour - Normal, levels=design)
+fit2 <- contrasts.fit(fit, contrasts)
+anno <- fData(colonData.filt)
+head(anno)
+anno <- anno[,c("Symbol","Entrez_Gene_ID","Chromosome","Cytoband")]
+fit2$genes <- anno
+
+fit2 <- eBayes(fit2)
+topTable(fit2)
+```
+
+
+## Using online tools
+
+Even though this is a course advocating the use of R and Bioconductor, there are in fact many online tools that can assist with gene set analyses
+
+```{r}
+testResult <- decideTests(fit2)
+testResult
+```
+
+For example, one of the inputs that ***Genetrail*** accepts is a text file of gene symbols. We can generate such a list from our DE results.
+
+```{r}
+deSymbols <- anno$Symbol[which(abs(testResult) == 1) ]
+write.table(deSymbols, file="myDESymbols.txt",sep="\t",quote=FALSE,row.names = FALSE)
+```
+
+## Theory Part II
+
+## A one-off test
+
+Ocassionally, we might want to check if a particular set of genes appear to be up- or down-
+regulated in an analysis. This can be checked using the geneSetTest function in limma,
+which computes a p-value to test the hypothesis that the selected genes have more extreme
+test-statistics than one might expect by chance. Moreover, separate tests can be performed
+to see if the selected genes are up-regulated (alternative=up) or down-regulated (alterna-
+tive=down). The default is to test for extreme statistics regardless of sign.
+
+```{r}
+library (limma)
+library(illuminaHumanv3.db)
+ccGenes <- unlist (mget("04110" , revmap (illuminaHumanv3PATH)))
+
+ccInd <- which (rownames(colonData.filt)  %in% ccGenes)
+
+geneSetTest (index = ccInd , statistics = fit2$t)
+
+geneSetTest (index = ccInd , statistics = fit2$t ,
+  alternative = "down" )
+
+geneSetTest (index = ccInd , statistics = fit2$t ,
+  alternative = "up" )
+
+barcodeplot (statistics = as.numeric(fit2$t) , index = ccInd )
+
+plot (density(fit2$t))
+
+lines (density (fit2$t[ccInd]) , col = " red " )
+
+```
+
+## GOstats
+
+
+We are now going to create a gene universe by removing genes for will not contribute to the
+subsequent analysis. Such filtering is done without regarding the phenotype variables - hence
+a ”non-specific” filter. An Illumina Human6 chip contains around 48,00 probes, but less than
+half of these have enough detailed information to useful for a GO analysis. Therefore we re-
+strict the dataset to only probes for which we have a Entrez ID. It is also recommended to
+select probes with sufficient variability across samples to be interesting; as probes with little
+variability will no be interesting to the question we are trying to answer. The interquartile-
+range of each probe across all arrays is commonly used for this with a cut-off of 0.5.
+
+```{r}
+library (illuminaHumanv3.db)
+entrezIds = mget(rownames(exprs(colonData)) , illuminaHumanv3ENTREZID ,
+  ifnotfound = NA )
+
+haveEntrezId = names(entrezIds)[sapply(entrezIds , function (x) !is.na(x))]
+
+entrezSubset = exprs (colonData)[haveEntrezId , ]
+
+entrezIQR = apply(entrezSubset, 1 , IQR)
+
+selected = entrezIQR > 0.5
+
+nsFiltered = entrezSubset [selected ,]
+
+universeIds = unlist (mget(rownames(nsFiltered ) , illuminaHumanv3ENTREZID ,
+  ifnotfound = NA ))
+```
+
+Remember that the size of the universe can have an effect on the analysis. If the universe is
+made artificially large by including too many uninformative probes, the p-values for the GO
+terms will appear more significant.
+
+We now test the genes in the universe to see which ones have significant differences between
+the two groups. For this, we use the rowttests function implemented in the genefilter pack-
+age, which performs a t-test for each row with respect to a factor. The p-values of the test
+can be extracted, with one p-value given for each probe.
+
+```{r}
+library (GOstats)
+library (genefilter)
+fac = as.factor(SampleGroup)
+ttests = rowttests(as.matrix(nsFiltered) , fac)
+
+smPV = ttests$p.value < 0.05
+
+pvalFiltered = nsFiltered [smPV , ]
+
+dim (pvalFiltered)
+
+selectedEntrezIds = unlist (mget(rownames(pvalFiltered) ,
+  illuminaHumanv3ENTREZID , ifnotfound = NA))
+
+```
+
+
+The hyperGTest function is used to do the hypergeometric test for GO terms. Rather than
+passing a long list of parameters to the function. An object of type GOHyperGParams is
+created to hold all the parameters we need to run the hypergeometric test. This object can
+then be passed to hyperGTest multiple times without having to re-type the parameters each
+time. The meanings of these parameters are as follows:
+
+  - geneIds - The list of identifiers for the genes that we have selected as interesting
+  - universeGeneIds - The list of identifiers resulting from non-specific filtering
+  - annotation - The name of the annotation package that will be used
+  - ontology - The name of the GO ontology that will be tested; either BP, CC or MF
+  - pvaluecutoff - p-value that we will use to select significant GO terms
+  - testDirection - Either ”over” or ”under” for over or under represented terms respectively
+  - conditional - A more sophisticated form of hypergeometric test, which takes the relationships between terms in the GO graph can be used if this is set to TRUE. For this practical we will keep conditional = FALSE
+
+  
+```{r}
+params = new ("GOHyperGParams" , geneIds = selectedEntrezIds , 
+              universeGeneIds = universeIds , annotation = "illuminaHumanv3" ,
+              ontology =  "BP" , pvalueCutoff = 0.05 , conditional = FALSE ,
+              testDirection = "over")
+hgOver = hyperGTest(params)
+hgOver
+```
+
+The summary function can be used to view the results of the test in matrix form. The rows
+of the matrix are arranged in order of significance. The p-value is shown for each GO term
+along with with total number of genes for that GO term, number of genes we would be ex-
+pect to appear in the gene list by chance and that number that were observed. A descriptive
+name is also given for each term. The results can also be printed out to a HTML report us-
+ing htmlReport.
+
+```{r}
+summary (hgOver)[1:20 , ]
+```
+
+GOstats also has the facility to test for KEGG pathways and chromosome bands which are
+over-reprsented. The procedure of creating a gene universe and set of selected genes is the
+same. However, we have to use a different object for the parameters, as not all
+
+```{r}
+keggParams = new ("KEGGHyperGParams" , geneIds = selectedEntrezIds ,
+  universeGeneIds = universeIds , annotation = "illuminaHumanv3" ,
+  pvalueCutoff = 0.05 , testDirection = "over" )
+
+keggHgOver = hyperGTest (keggParams)
+
+summary (keggHgOver)
+
+chrParams = new ("ChrMapHyperGParams" , geneIds = selectedEntrezIds ,
+universeGeneIds = universeIds , annotation = "illuminaHumanv3" ,
+pvalueCutoff = 0.05 , testDirection = "over" , conditional = TRUE )
+
+chrHgOver = hyperGTest (chrParams)
+summary (chrHgOver)
+```
