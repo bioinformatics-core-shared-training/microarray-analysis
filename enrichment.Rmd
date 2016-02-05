@@ -12,24 +12,121 @@ library(limma)
 ## Gene-Ontology Analysis
 
 In this section we give an example of how to find a list of relevant pathways / GO terms
-from a list of differentially-expressed genes. We will use the colon cancer data that we down-
-loaded from GEO.
+from a list of differentially-expressed genes. 
 
-## Theory Part I
+## Theory Part I: Over-representaion analysis
 
-## Importing the data
+- "Threshold-based": require defintion of a statistical threshold to define list of genes to test (e.g. FDR < 0.01)
+- Hypergeometric test, Fisher's Exact test is used.
+
+The question we are asking here is;
+
+> ***"Are the number of DE genes associated with Theme X significantly greater than what we might expect by chance alone?"***
+
+Where Theme X could be genes belonging to a particular GO (Gene Onotology) term.
+
+Let's imagine that we have a bag full of balls. Each balls represents a gene in the *gene universe*. 
+- Paint the balls representing our selected list grey, and paint the rest black.
+
+
+![bag-and balls](images/bag-and-balls.png)
+
+In this small example, we can define;
+
+- Total number of balls: 40
+- Total number of interesting (grey) balls: 12
+
+Now, lets select a number (say, 10) of the balls at random without seeing into the bag and look at what we get
+
+![picked-balls](images/picked-balls.png)
+
+
+We have picked, at random, 8 grey balls. Using simulations, we can repeat the process and look at how many grey we get. We can (of course!) do this in R 
+
+```{r}
+trials <- rhyper(10000,30,10,10)
+hist(trials)
+table(trials)
+table(trials)/10000
+cumsum(table(trials)/10000)
+```
+
+The distribution of balls can be expressed as a contingency table, on which we can use a Fisher's exact test
+
+```{r results='asis',echo=FALSE}
+library(knitr)
+df <- data.frame(Selection_in = c(8,4), Selection_out = c(2,26))
+rownames(df) <- c("Grey_in", "Grey_out")
+kable(df)
+
+```
+
+**Be careful of how you define the universe**
+
+What genes were candidates for selection as universe?
+
+- All possible genes
+- All genes represented on the chip
+- All genes that have a GO annotation
+- All genes from the chip that pass a **non-specific** filter
+
+Just changing the size of the universe alone can have a massive effect on the p-value
+
+```{r}
+## Code from Seth Falcon
+P <- function(size){
+  nFound <- 10
+  nDrawn <- 400
+  nAtCat <- 40
+  nNotAtCat <- size - nAtCat
+  phyper(nFound-1, nAtCat,nNotAtCat,nDrawn,lower.tail = FALSE)
+}
+P(1000)
+P(5000)
+```
+
+
+
+```{r}
+ps <- sapply(seq(1000,5000,by=50),P)
+plot(seq(1000,5000,by=50),ps,type="l",xlab="size",ylab="pval")
+abline(h=0.05,lty=2,col="red")
+```
+
+
+
+
+## Preparing the data for an over-representation test
+
+As before, we download the data from GEO.
 
 ```{r cache=TRUE}
 library(GEOquery)
+library(genefilter)
 url <- "ftp://ftp.ncbi.nih.gov/pub/geo/DATA/SeriesMatrix/GSE33126/"
 filenm <- "GSE33126_series_matrix.txt.gz"
 if(!file.exists("GSE33126_series_matrix.txt.gz")) download.file(paste(url, filenm, sep=""), destfile=filenm)
 colonData <- getGEO(filename=filenm)
 colonData
-annotation(colonData) <- "illuminaHumanv3"
-colonData.filt <- varFilter(colonData)
-
 ```
+
+We will identify the probes that have an Entrez ID.
+
+```{r}
+anno <- fData(colonData)
+anno <- anno[,c("Symbol","Entrez_Gene_ID","Chromosome","Cytoband")]
+hasEntrez <- which(anno$Entrez_Gene_ID != "")
+colonData.filt <- colonData[hasEntrez,]
+```
+
+We'll write-out the names of the Entrez genes that we have so we can use this as our *Gene Universe*.
+
+```{r}
+anno <- fData(colonData.filt)
+universeIds <- anno$Entrez_Gene_ID
+write.table(universeIds, file="geneUniverse.txt",sep="\t",row.names = FALSE,quote=FALSE)
+```
+
 
 ```{r}
 exprs (colonData.filt) <- log2 (exprs(colonData.filt))
@@ -48,9 +145,7 @@ fit <- lmFit(exprs(colonData.filt), design)
 
 contrasts <- makeContrasts(Tumour - Normal, levels=design)
 fit2 <- contrasts.fit(fit, contrasts)
-anno <- fData(colonData.filt)
-head(anno)
-anno <- anno[,c("Symbol","Entrez_Gene_ID","Chromosome","Cytoband")]
+
 fit2$genes <- anno
 
 fit2 <- eBayes(fit2)
@@ -67,11 +162,11 @@ testResult <- decideTests(fit2)
 testResult
 ```
 
-For example, one of the inputs that ***Genetrail*** accepts is a text file of gene symbols. We can generate such a list from our DE results.
+For example, one of the inputs that ***DAVID*** accepts is a text file of gene symbols. We can generate such a list from our DE results.
 
 ```{r}
-deSymbols <- anno$Symbol[which(abs(testResult) == 1) ]
-write.table(deSymbols, file="myDESymbols.txt",sep="\t",quote=FALSE,row.names = FALSE)
+deEntrez <- anno$Entrez_Gene_ID[which(abs(testResult) == 1) ]
+write.table(deEntrez, file="myEntrezGene.txt",sep="\t",quote=FALSE,row.names = FALSE)
 ```
 
 ## Theory Part II
@@ -108,7 +203,7 @@ lines (density (fit2$t[ccInd]) , col = " red " )
 
 ```
 
-## GOstats
+## Over-reprsentation analysis in Bioconductor: GOstats
 
 
 We are now going to create a gene universe by removing genes for will not contribute to the
@@ -148,7 +243,7 @@ the two groups. For this, we use the rowttests function implemented in the genef
 age, which performs a t-test for each row with respect to a factor. The p-values of the test
 can be extracted, with one p-value given for each probe.
 
-```{r}
+```{r cache=TRUE}
 library (GOstats)
 library (genefilter)
 fac = as.factor(SampleGroup)
@@ -181,7 +276,7 @@ time. The meanings of these parameters are as follows:
   - conditional - A more sophisticated form of hypergeometric test, which takes the relationships between terms in the GO graph can be used if this is set to TRUE. For this practical we will keep conditional = FALSE
 
   
-```{r}
+```{r cache=TRUE}
 params = new ("GOHyperGParams" , geneIds = selectedEntrezIds , 
               universeGeneIds = universeIds , annotation = "illuminaHumanv3" ,
               ontology =  "BP" , pvalueCutoff = 0.05 , conditional = FALSE ,
@@ -197,7 +292,7 @@ pect to appear in the gene list by chance and that number that were observed. A 
 name is also given for each term. The results can also be printed out to a HTML report us-
 ing htmlReport.
 
-```{r}
+```{r cache=TRUE}
 summary (hgOver)[1:20 , ]
 ```
 
@@ -205,7 +300,7 @@ GOstats also has the facility to test for KEGG pathways and chromosome bands whi
 over-reprsented. The procedure of creating a gene universe and set of selected genes is the
 same. However, we have to use a different object for the parameters, as not all
 
-```{r}
+```{r cache=TRUE}
 keggParams = new ("KEGGHyperGParams" , geneIds = selectedEntrezIds ,
   universeGeneIds = universeIds , annotation = "illuminaHumanv3" ,
   pvalueCutoff = 0.05 , testDirection = "over" )

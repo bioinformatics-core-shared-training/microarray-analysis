@@ -30,8 +30,11 @@ gse
 head(exprs(gse))
 ```
 
-- Do the data look to be normalised?
 
+******
+##Q  Do the data look to be normalised?
+
+******
 
 ```{r}
 exprs(gse) <- log2(exprs(gse))
@@ -40,11 +43,13 @@ boxplot(exprs(gse),outline=FALSE)
 
 Inspect the clinical variables
 
-- What column has the information about whether is sample is a tumour or normal?
-- How many do we have in each group?
+******
+##Q What column has the information about whether is sample is a tumour or normal?
+##Q How many do we have in each group?
 
+******
 ```{r}
-pData(gse)[1:5,]
+pData(gse)[1:5,1:8]
 pd <- pData(gse)
 View(pd)
 SampleGroup <- pd$source_name_ch1
@@ -65,7 +70,25 @@ head(destats)
 
 # The linear model approach
 
-Create a design matrix 
+Create a design matrix. Recall that this is basically how we define which sample group each array belongs to. We can either do this by hand or using a convenient function in `limma`. 
+
+By-hand, we would do;
+
+```{r}
+design <- matrix(nrow=18,ncol=2)
+design[,1] <- c(0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1)
+design[,2] <- c(1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0)
+colnames(design) <- c("Normal","Tumour")
+```
+
+or a shortcut in this would use the `rep` function.
+
+```{r}
+design[,1] <- rep(c(0,1),by=9)
+design[,2] <- rep(c(1,0),by=9)
+```
+
+Clearly this is both time-consuming and prone to error. Recommended is the `model.matrix` function, which understands the linear model syntax of R (i.e. using the tilde `~` symbol)
 
 ```{r}
 design <- model.matrix(~0+SampleGroup)
@@ -73,7 +96,7 @@ design
 colnames(design) <- c("Normal","Tumour")
 ```
 
-The `lmFit` funcion is used to fit the model to the data. The output has various components. How 
+The `lmFit` funcion is used to fit the model to the data. The output has various components, most of which you probably don't need to know about.
 
 ```{r}
 fit <- lmFit(exprs(gse), design)
@@ -81,6 +104,14 @@ names(fit)
 dim(fit$coefficients)
 head(fit$coefficients)
 ```
+
+
+******
+
+##Q. What is the interpretation of the `coeff` item in the output
+
+******
+
 
 Now we define the contrast
 
@@ -116,7 +147,7 @@ The columns are as follows;
 
 ```{r}
 anno <- fData(gse)
-head(anno)
+head(anno)[,1:5]
 anno <- anno[,c("Symbol","Entrez_Gene_ID","Chromosome","Cytoband")]
 fit2$genes <- anno
 topTable(fit2)
@@ -134,7 +165,7 @@ dotchart(exprs(gse)["ILMN_1704294",])
 boxplot(exprs(gse)["ILMN_1704294",]~SampleGroup)
 ```
 
-How many genes are DE?
+To find how many genes are DE we can use the `decideTests` function, which also applies multiple-test correction.
 
 ```{r}
 decideTests(fit2)
