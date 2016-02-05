@@ -127,6 +127,19 @@ universeIds <- anno$Entrez_Gene_ID
 write.table(universeIds, file="geneUniverse.txt",sep="\t",row.names = FALSE,quote=FALSE)
 ```
 
+In the following, we filter further by collapsing to unique Entrez IDs. The IQR is used as a criteria for selecting the *best* probe for each gene
+
+```{r}
+
+testStat <- apply(exprs(colonData.filt),1, IQR,na.rm=TRUE)
+lls <- anno$Entrez_Gene_ID
+tSsp = split.default(testStat, lls)
+selectedID <- sapply(tSsp, function(x) names(which.max(x)))
+
+colonData.filt <- colonData.filt[selectedID,]
+length(unique(fData(colonData.filt)$Entrez))
+```
+
 
 ```{r}
 exprs (colonData.filt) <- log2 (exprs(colonData.filt))
@@ -146,7 +159,7 @@ fit <- lmFit(exprs(colonData.filt), design)
 contrasts <- makeContrasts(Tumour - Normal, levels=design)
 fit2 <- contrasts.fit(fit, contrasts)
 
-fit2$genes <- anno
+fit2$genes <- fData(colonData.filt)[,c("Symbol","Entrez_Gene_ID","Chromosome","Cytoband")]
 
 fit2 <- eBayes(fit2)
 topTable(fit2)
