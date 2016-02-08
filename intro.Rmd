@@ -1,7 +1,7 @@
 ---
 title: "Technology Overview"
 author: "Mark Dunning"
-date: "February 2016"
+date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
 output: html_document
 
 ---
@@ -9,6 +9,7 @@ output: html_document
 
 #Historical overview
 
+(from my [thesis](https://www.repository.cam.ac.uk/handle/1810/218542) in 2007)
 
 A microarray (sometimes referred to as an array) is a device for simultaneously measuring the expression level of thousands of genes. The technology
 makes use of the base-complementarity property of DNA and the fact that
@@ -23,24 +24,21 @@ stranded DNA (cDNA) and then transcribed into cRNA. These cRNA are
 then fluorescently labelled, and exposed to the microarray surface. The target RNA then binds (hybridises) to its complementary probe sequence on the microarray, whereas non-complementary sequences should fail to hybridise.
 The amount of fluorescence observed at each feature can therefore be used
 to determine the level of expression for each of the genes represented on the
-array. In the earliest microarrays (Schena et al., 1995), each feature on
+array. In the earliest microarrayseach feature on
 the array corresponded to a different gene of interest. However, subsequent
 developments in microarray production have allowed the same gene to be rep-
 resented multiple times, thus providing more reliable expression estimates.
-Two-colour microarrays are used to compare two samples (e.g. cancer
+Two-colour microarrays were used to compare two samples (e.g. cancer
 and normal cells) on the same microarray. The RNA from the two samples
 is extracted separately and fluorescently labelled with different dyes, usually
 red and green. Therefore, after hybridisation, each feature is a mixture of
 red and green fluorescence. A completely red or green feature indicates that
 a particular gene is expressed in one sample, but not the other. 
 
-In practice, the mixture of red and green observed at each feature is not so clear-cut and
-statistical methods are required to quantify the contribution of each colour,
-as described later.
+
 Each company has a different method of manufacturing microarrays, the major differences being the production of the probe sequences
 used and the method of depositing these sequences onto the array surface.
-For instance, different length probe sequences (usually measured in the num-
-ber of base-pairs) can be used as well as mRNA or cDNA probes, rather than
+For instance, different length probe sequences (usually measured in the number of base-pairs) can be used as well as mRNA or cDNA probes, rather than
 the cRNA probes described above.
 
 ![probe-and-target](https://upload.wikimedia.org/wikipedia/en/c/c8/Microarray-schema.jpg)
@@ -51,7 +49,7 @@ expression level of every gene of interest in a given sample. Therefore, the
 fluorescence of each feature is a measure of the expression level of a particular gene. Arguably the most popular single-channel microarray
 technology was that of Affymetrix. As we will describe in the next section, these arrays use 25 base-pair probes that are synthesised on the array surface. Each gene of interest is interrogated by a collection of 11-20 probe pairs, known as a probe set. The expression level for a gene is then derived by combining all measurements from a particular probe set.
 
-Illumina (who are probably best-known for their sequencing technologies these days), were also a major player. Until recently, all gene-expression arrays at the CRUK Cambridge Institute were run on Illumina arrays and we have much experience in conducting [large-scale cancer studies](http://www.nature.com/nature/journal/v486/n7403/full/nature10983.html) and developing [software](http://bioinformatics.oxfordjournals.org/content/23/16/2183.full) and [analysis methods](http://nar.oxfordjournals.org/content/38/3/e17.long) for these arrays.
+Illumina (who are probably best-known for their sequencing technologies these days), were also a major player. [Until recently](http://core-genomics.blogspot.co.uk/2014/08/seqc-kills-microarrays-not-quite.html), all gene-expression arrays at the CRUK Cambridge Institute were run on Illumina arrays and we have much experience in conducting [large-scale cancer studies](http://www.nature.com/nature/journal/v486/n7403/full/nature10983.html) and developing [software](http://bioinformatics.oxfordjournals.org/content/23/16/2183.full) and [analysis methods](http://nar.oxfordjournals.org/content/38/3/e17.long) for these arrays.
 
 
 ## Typical workflow
@@ -139,7 +137,7 @@ There is a vast amount of [Illumina](http://www.ncbi.nlm.nih.gov/geo/query/acc.c
 - Statistical testing
 - Clustering classification etc
 
-Microarray data are much more manageable in size. We can work with decent-sized experiments (~100s of samples) and learn about high-dimensional analysis techniques
+Microarray data are much more manageable in size. We can work with decent-sized experiments (~100s of samples) and learn about high-dimensional analysis techniques that you will encounter in the analysis of newer, sexier, technologies.
 
 
 ## Advantages of R
@@ -152,13 +150,16 @@ The main advantages are;
 
 - Open-source
 - Cross-platform
-- Facilitaing ***Reproducible Research***
 - Access to existing visualisation / statistical tools
 - Flexibility
 - Visualisation and interactivity
+- Facilitaing ***Reproducible Research***
 
+![duke-scandal](images/rep-research-nyt.png)
 
+Two Biostatiscians (later termed '*Forensic Bioinformaticians*') from M.D. Anderson used R extensively during their re-analysis and investigation of a Clinical Prognostication paper from Duke. The subsequent [scandal](https://www.youtube.com/watch?v=W5sZTNPMQRM) put Reproducible Research at the forefront of everyone's mind.
 
+Keith Baggerly's [talk](https://www.youtube.com/watch?v=7gYIs7uYbMo) is highy-recommended.
 
 ## Support for R
 
