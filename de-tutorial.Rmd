@@ -68,6 +68,7 @@ head(destats)
 
 - Can we remember the drawbacks of this approach?
 
+
 # The linear model approach
 
 Create a design matrix. Recall that this is basically how we define which sample group each array belongs to. We can either do this by hand or using a convenient function in `limma`. 
@@ -96,10 +97,20 @@ design
 colnames(design) <- c("Normal","Tumour")
 ```
 
+Prior to the differential expression analysis, we will *filter* the data so only the top 50% most-variable genes get analysed, which [has been shown](http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2906865/) to increase our power to detect differential expression. We can do this using the `varFilter` function in the `genefilter` package.
+
+```{r}
+library(genefilter)
+gse.expFilt <- varFilter(gse)
+gse.expFilt
+```
+
+
+
 The `lmFit` funcion is used to fit the model to the data. The output has various components, most of which you probably don't need to know about.
 
 ```{r}
-fit <- lmFit(exprs(gse), design)
+fit <- lmFit(exprs(gse.expFilt), design)
 names(fit)
 dim(fit$coefficients)
 head(fit$coefficients)
@@ -146,7 +157,7 @@ The columns are as follows;
 # Including annotation
 
 ```{r}
-anno <- fData(gse)
+anno <- fData(gse.expFilt)
 head(anno)[,1:5]
 anno <- anno[,c("Symbol","Entrez_Gene_ID","Chromosome","Cytoband")]
 fit2$genes <- anno
