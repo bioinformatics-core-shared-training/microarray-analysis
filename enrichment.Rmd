@@ -110,6 +110,58 @@ colonData <- getGEO(filename=filenm)
 colonData
 ```
 
+
+
+## Filtering the expression data
+
+
+Quite often for an expression analysis we want
+
+- to map to other annotation sources using Entrez ID
+- measurements from reliable annotation sources
+- one measurement per gene
+
+Therefore, it makes sense to;
+
+- exclude probes with no Entrez gene identifier
+- collapse multiple probes to one
+    + alternatively, choose one probe per-gene
+    
+A simple strategy would be to use the `features` matrix and search for probes with missing *Entrez* ID.
+
+```{r}
+noEntrez <- which(features$ENTREZ_GENE_ID == "")
+mydata.filt <- mydata[-noEntrez,]
+dim(mydata.filt)
+
+hasEntrez <- which(features$ENTREZ_GENE_ID != "")
+mydata.filt <- mydata[hasEntrez,]
+dim(mydata.filt)
+```
+
+As it turns out, the `genefilter` package has some useful features for exactly this task. Not only will it remove probes without an Entrez ID, but it will collapse probes for the same gene to a single value. It picks the "*best*" probe by using the *IQR* measured across the whole dataset. The reasoning being that we want to include the most-informative probe; the probe which shows the most variation. It is important to choose probes in this *non-specific* manner. Choosing probes with reference to the sample groups being investigated would bias and compromise the differential expression analysis.
+
+In order to run this function, we need to specify the name of the Bioconductor annotation package that corresponds to the chip type. In this case it is `hgu133a`.
+
+```{r}
+library(genefilter)
+annotation(mydata)
+annotation(mydata) <- "hgu133a"
+mydata.annofilt <- featureFilter(mydata)
+mydata.annofilt
+```
+
+Additionally, we can choose to filter probes based on their expression variability alone using the `varFilter` function. Again, this uses the *IQR* as it's measure of variability.
+
+```{r}
+mydata.exprFilt <- varFilter(mydata)
+mydata.exprFilt
+```
+
+It may seem odd to discard so many of our probes, but in reality only *about half* (?) of the genes in a study are going to be expreesed anyway. Reducing the dimensionality of the dataset also helps with *multiple-testing* concerns that arise during differential-expression analyses.
+
+
+
 We will identify the probes that have an Entrez ID.
 
 ```{r}
@@ -182,41 +234,8 @@ deEntrez <- anno$Entrez_Gene_ID[which(abs(testResult) == 1) ]
 write.table(deEntrez, file="myEntrezGene.txt",sep="\t",quote=FALSE,row.names = FALSE)
 ```
 
-## Theory Part II
 
-## A one-off test
-
-Ocassionally, we might want to check if a particular set of genes appear to be up- or down-
-regulated in an analysis. This can be checked using the geneSetTest function in limma,
-which computes a p-value to test the hypothesis that the selected genes have more extreme
-test-statistics than one might expect by chance. Moreover, separate tests can be performed
-to see if the selected genes are up-regulated (alternative=up) or down-regulated (alterna-
-tive=down). The default is to test for extreme statistics regardless of sign.
-
-```{r}
-library (limma)
-library(illuminaHumanv3.db)
-ccGenes <- unlist (mget("04110" , revmap (illuminaHumanv3PATH)))
-
-ccInd <- which (rownames(colonData.filt)  %in% ccGenes)
-
-geneSetTest (index = ccInd , statistics = fit2$t)
-
-geneSetTest (index = ccInd , statistics = fit2$t ,
-  alternative = "down" )
-
-geneSetTest (index = ccInd , statistics = fit2$t ,
-  alternative = "up" )
-
-barcodeplot (statistics = as.numeric(fit2$t) , index = ccInd )
-
-plot (density(fit2$t))
-
-lines (density (fit2$t[ccInd]) , col = " red " )
-
-```
-
-## Over-reprsentation analysis in Bioconductor: GOstats
+## Over-representation analysis in Bioconductor: GOstats
 
 
 We are now going to create a gene universe by removing genes for will not contribute to the
@@ -328,4 +347,43 @@ pvalueCutoff = 0.05 , testDirection = "over" , conditional = TRUE )
 
 chrHgOver = hyperGTest (chrParams)
 summary (chrHgOver)
+```
+
+
+## Theory Part II: Threshold-free
+
+For these tests, we don't have to specify a statistical threshold and use the test statistics from *all* genes as the input to the test. The popular *Gene Set Enrichment Analysis (GSEA)* uses this approach.
+
+![gsea](images/GSEA.png)
+
+*Subramanian et al, PNAS 2005*
+
+
+A simple version of this test is implemented in the `geneSetTest` function in `limma`,
+which computes a p-value to test the hypothesis that the selected genes have more extreme
+test-statistics than one might expect by chance. Moreover, separate tests can be performed
+to see if the selected genes are up-regulated (alternative=up) or down-regulated (alterna-
+tive=down). The default is to test for extreme statistics regardless of sign.
+
+```{r}
+library (limma)
+library(illuminaHumanv3.db)
+ccGenes <- unlist (mget("04110" , revmap (illuminaHumanv3PATH)))
+
+ccInd <- which (rownames(colonData.filt)  %in% ccGenes)
+
+geneSetTest (index = ccInd , statistics = fit2$t)
+
+geneSetTest (index = ccInd , statistics = fit2$t ,
+  alternative = "down" )
+
+geneSetTest (index = ccInd , statistics = fit2$t ,
+  alternative = "up" )
+
+barcodeplot (statistics = as.numeric(fit2$t) , index = ccInd )
+
+plot (density(fit2$t))
+
+lines (density (fit2$t[ccInd]) , col = " red " )
+
 ```
