@@ -86,6 +86,15 @@ exprs(mydata)[1:5,1:5]
 summary(exprs(mydata)[,1:5])
 ```
 
+We can visualise the expression values for a particular gene by knowing which row of the expression matrix it is found in.
+
+```{r}
+exprs(mydata)[1,]
+fData(mydata)[1,1:8]
+```
+
+
+
 ## Example 1.1 Quality assessment of the downloaded data
 
 As we have downloaded the processed and normalised data, there are limited options in terms of quality assessment. Without the *.cel* files we cannot examine the raw images or fit PLMs. The simplest form of QA is the boxplot.
@@ -198,57 +207,80 @@ colnames(features)
 
 ******
 
-## Example 1.3 Filtering the expression data
 
-From our answers, we should note that 
 
-1) some genes do not have an Entrez ID
-2) some genes have multiple probes
+##Example: Retrieving data for a particular gene
 
-Quite often for an expression analysis we want
+There are a number of different approaches we could use to find the rows that correspond to a particular gene
 
-- to map to other annotation sources using Entrez ID
-- measurements from reliable annotation sources
-- one measurement per gene
 
-Therefore, it makes sense to;
+******
+Q. Use the following code to understand the difference between `grep`, `match` and `==`
 
-- exclude probes with no Entrez gene identifier
-- collapse multiple probes to one
-    + alternatively, choose one probe per-gene
-    
-A simple strategy would be to use the `features` matrix and search for probes with missing *Entrez* ID.
+******
 
-```{r}
-noEntrez <- which(features$ENTREZ_GENE_ID == "")
-mydata.filt <- mydata[-noEntrez,]
-dim(mydata.filt)
-
-hasEntrez <- which(features$ENTREZ_GENE_ID != "")
-mydata.filt <- mydata[hasEntrez,]
-dim(mydata.filt)
+```{r eval=FALSE}
+features[grep("TP53", features$`Gene Symbol`),]
+features[which(features$`Gene Symbol` == "TP53"),]
+features[match("TP53", features$`Gene Symbol`),]
 ```
 
-As it turns out, the `genefilter` package has some useful features for exactly this task. Not only will it remove probes without an Entrez ID, but it will collapse probes for the same gene to a single value. It picks the "*best*" probe by using the *IQR* measured across the whole dataset. The reasoning being that we want to include the most-informative probe; the probe which shows the most variation. It is important to choose probes in this *non-specific* manner. Choosing probes with reference to the sample groups being investigated would bias and compromise the differential expression analysis.
+Briefly; `grep` will return all rows that have "TP53" *somewhere* in the gene symbol, `which` combined with `==` returns all rows that exactly match, and `match` returns just the first match.
 
-In order to run this function, we need to specify the name of the Bioconductor annotation package that corresponds to the chip type. In this case it is `hgu133a`.
-
-```{r}
-library(genefilter)
-annotation(mydata)
-annotation(mydata) <- "hgu133a"
-mydata.annofilt <- featureFilter(mydata)
-mydata.annofilt
-```
-
-Additionally, we can choose to filter probes based on their expression variability alone using the `varFilter` function. Again, this uses the *IQR* as it's measure of variability.
+You'll probably want to use `which(features$"Gene Symbol" == TP53`)`, which in this example returns two rows.
 
 ```{r}
-mydata.exprFilt <- varFilter(mydata)
-mydata.exprFilt
+rows <- which(features$`Gene Symbol` == "TP53")
+rows
 ```
 
-It may seem odd to discard so many of our probes, but in reality only *about half* (?) of the genes in a study are going to be expreesed anyway. Reducing the dimensionality of the dataset also helps with *multiple-testing* concerns that arise during differential-expression analyses.
+The expression values relating to either of these probes can be extracted from the expression matrix (given by `exprs(mydata)`) by using the same row index. For convenience, here we save the expression matrix as a new variable and do the log$_2$ transformation.
+
+```{r}
+E <- log2(exprs(mydata))
+E[1274,]
+E[10723,]
+```
+
+Having the expression values available as a vector allows us to access the plotting and transformation facilities in R. If we plot either of these vectors that we extract in the previous piece of code, we plot the expression level of the probe on the $y$ axis, and the array index on the $x$ axis.
+
+
+```{r}
+par(mfrow=c(1,2))
+plot(E[1274,], xlab="Array Index ",
+     col="steelblue",pch=16,
+     ylab="Normalised Expression",main="201746_at")
+
+plot(E[10723,], xlab="Array Index ",
+     col="steelblue",pch=16,
+     ylab="Normalised Expression",main="211300_s_at")
+
+```
+
+Or we could plot one probe against the other
+
+```{r}
+par(mfrow=c(1,1))
+plot(E[1274,],E[10723,],xlab="201746_at",ylab="211300_s_at",col="steelblue",pch=16)
+cor(E[1274,],E[10723,])
+```
+
+If we want to include information about the samples on the plot (e.g. clinical variables), then we need to look at how these data are represented in the `ExpressionSet` object. This follows in the next section.
+
+Finally, when deciding which probe to use in the analysis, we could use some of the feature information stored in the `mydata` object. For instance, one probe might represent specific transcript forms of the gene, whereas the other might be more specific.
+
+Another approach would be to use the variability of the probe as a measure of how *informative* it is in the study. The `IQR` (`?IQR`) function can compute this.
+
+******
+Q. Use the `IQR` function to calculate the inter-quartle range of both probes. Which would be the best probe to report in an analysis?
+******
+
+```{r}
+IQR(E[1274,])
+IQR(E[10723,])
+```
+
+
 
 ## Example 2. Dealing with large cohorts
 
@@ -297,6 +329,49 @@ Q. How many of the patients relapsed?
 table(pd$characteristics_ch1.1)
 table(pd$characteristics_ch1.2)
 ```
+
+
+This cateogorical information can be used in our analysis.
+
+Lets take the gene ***XIST*** and find what probes target this gene;
+
+```{r}
+rows <- which(fData(cohort)$"Gene Symbol" == "XIST")
+rows
+```
+
+If we take just the first probe, it clearly exhibits bi-modal behaviour.
+```{r}
+subset <- exprs(cohort)[rows,]
+dim(subset)
+plot(subset[1,])
+plot(density(subset[1,]))
+```
+
+A boxplot using the gender of the samples is very informative
+
+```{r}
+boxplot(subset[1,]~pd$characteristics_ch1.1)
+```
+
+The pattern is repeated for the other probes
+
+***N.B. we haven't discussed looping in R yet, so here is the long-hand way to produce these plots***
+
+```{r}
+par(mfrow=c(2,4))
+boxplot(subset[1,]~pd$characteristics_ch1.1,las=2,main=fData(cohort)[rows[1],1])
+boxplot(subset[2,]~pd$characteristics_ch1.1,las=2,main=fData(cohort)[rows[1],1])
+boxplot(subset[3,]~pd$characteristics_ch1.1,las=2,main=fData(cohort)[rows[1],1])
+boxplot(subset[4,]~pd$characteristics_ch1.1,las=2,main=fData(cohort)[rows[1],1])
+boxplot(subset[5,]~pd$characteristics_ch1.1,las=2,main=fData(cohort)[rows[1],1])
+boxplot(subset[6,]~pd$characteristics_ch1.1,las=2,main=fData(cohort)[rows[1],1])
+boxplot(subset[7,]~pd$characteristics_ch1.1,las=2,main=fData(cohort)[rows[1],1])
+boxplot(subset[8,]~pd$characteristics_ch1.1,las=2,main=fData(cohort)[rows[1],1])
+```
+
+## Example: Extra manipulation of the clinical data
+
 
 ******
 Q. What is the age distribution of the samples?
@@ -349,4 +424,4 @@ clinvars <- separate(clinvars, col="characteristics_ch1.1",sep=":",into=c("chara
 head(clinvars)
 ```
 
-
+## Using both feature and clinical information
