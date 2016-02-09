@@ -103,64 +103,25 @@ As before, we download the data from GEO.
 ```{r cache=TRUE}
 library(GEOquery)
 library(genefilter)
-url <- "ftp://ftp.ncbi.nih.gov/pub/geo/DATA/SeriesMatrix/GSE33126/"
-filenm <- "GSE33126_series_matrix.txt.gz"
-if(!file.exists("GSE33126_series_matrix.txt.gz")) download.file(paste(url, filenm, sep=""), destfile=filenm)
+url <- "ftp://ftp.ncbi.nih.gov/pub/geo/DATA/SeriesMatrix/GSE33126/GSE33126_series_matrix.txt.gz"
+filenm <- "data/GSE33126_series_matrix.txt.gz"
+if(!file.exists("data/GSE33126_series_matrix.txt.gz")) download.file(url, destfile=filenm)
 colonData <- getGEO(filename=filenm)
 colonData
 ```
 
-
-
-## Filtering the expression data
-
-
-Quite often for an expression analysis we want
-
-- to map to other annotation sources using Entrez ID
-- measurements from reliable annotation sources
-- one measurement per gene
-
-Therefore, it makes sense to;
-
-- exclude probes with no Entrez gene identifier
-- collapse multiple probes to one
-    + alternatively, choose one probe per-gene
-    
-A simple strategy would be to use the `features` matrix and search for probes with missing *Entrez* ID.
+Remember that we also need to do the log$_2$ transformation
 
 ```{r}
-noEntrez <- which(features$ENTREZ_GENE_ID == "")
-mydata.filt <- mydata[-noEntrez,]
-dim(mydata.filt)
-
-hasEntrez <- which(features$ENTREZ_GENE_ID != "")
-mydata.filt <- mydata[hasEntrez,]
-dim(mydata.filt)
+exprs(colonData) <- log2(exprs(colonData))
 ```
 
-As it turns out, the `genefilter` package has some useful features for exactly this task. Not only will it remove probes without an Entrez ID, but it will collapse probes for the same gene to a single value. It picks the "*best*" probe by using the *IQR* measured across the whole dataset. The reasoning being that we want to include the most-informative probe; the probe which shows the most variation. It is important to choose probes in this *non-specific* manner. Choosing probes with reference to the sample groups being investigated would bias and compromise the differential expression analysis.
 
-In order to run this function, we need to specify the name of the Bioconductor annotation package that corresponds to the chip type. In this case it is `hgu133a`.
-
-```{r}
-library(genefilter)
-annotation(mydata)
-annotation(mydata) <- "hgu133a"
-mydata.annofilt <- featureFilter(mydata)
-mydata.annofilt
-```
-
-Additionally, we can choose to filter probes based on their expression variability alone using the `varFilter` function. Again, this uses the *IQR* as it's measure of variability.
-
-```{r}
-mydata.exprFilt <- varFilter(mydata)
-mydata.exprFilt
-```
-
-It may seem odd to discard so many of our probes, but in reality only *about half* (?) of the genes in a study are going to be expreesed anyway. Reducing the dimensionality of the dataset also helps with *multiple-testing* concerns that arise during differential-expression analyses.
-
-
+We are now going to create a gene universe by removing genes for will not contribute to the
+subsequent analysis. Such filtering is done without regarding the phenotype variables - hence
+a ”non-specific” filter. An Illumina Human6 chip contains around 48,00 probes, but less than
+half of these have enough detailed information to useful for a GO analysis. Therefore we re-
+strict the dataset to only probes for which we have a Entrez ID. 
 
 We will identify the probes that have an Entrez ID.
 
@@ -171,126 +132,67 @@ hasEntrez <- which(anno$Entrez_Gene_ID != "")
 colonData.filt <- colonData[hasEntrez,]
 ```
 
-We'll write-out the names of the Entrez genes that we have so we can use this as our *Gene Universe*.
-
-```{r}
-anno <- fData(colonData.filt)
-universeIds <- anno$Entrez_Gene_ID
-write.table(universeIds, file="geneUniverse.txt",sep="\t",row.names = FALSE,quote=FALSE)
-```
-
 In the following, we filter further by collapsing to unique Entrez IDs. The IQR is used as a criteria for selecting the *best* probe for each gene
 
 ```{r}
 
 testStat <- apply(exprs(colonData.filt),1, IQR,na.rm=TRUE)
-lls <- anno$Entrez_Gene_ID
+lls <- fData(colonData.filt)$Entrez_Gene_ID
 tSsp = split.default(testStat, lls)
 selectedID <- sapply(tSsp, function(x) names(which.max(x)))
 
-colonData.filt <- colonData.filt[selectedID,]
-length(unique(fData(colonData.filt)$Entrez))
+colonData.filt <- colonData.filt[unlist(selectedID),]
+length(unique(fData(colonData.filt)$Entrez_Gene_ID))
+any(duplicated(fData(colonData.filt)$Entrez_Gene_ID))
+```
+
+After this filtering, we are left with 
+
+It is also recommended to select probes with sufficient variability across samples to be interesting; as probes with little variability will no be interesting to the question we are trying to answer. The IQR of each probe across all arrays is commonly used for this with a cut-off of 0.25.
+
+```{r}
+entrezIQR = apply(exprs(colonData.filt), 1 , IQR)
+hist(entrezIQR, xlim=c(0,2),breaks=100)
+colonData.filt <- colonData.filt[entrezIQR > 0.25,]
 ```
 
 
+We'll write-out the names of the Entrez genes that we have so we can use this as our *Gene Universe*.
+
 ```{r}
-exprs (colonData.filt) <- log2 (exprs(colonData.filt))
+anno.final <- fData(colonData.filt)
+universeIds <- anno.final$Entrez_Gene_ID
+length(universeIds)
+write.table(universeIds, file="geneUniverse.txt",sep="\t",row.names = FALSE,quote=FALSE)
+```
+
+We've previously explained the following steps to produce a table of DE genes. However, for this analysis we are interested in a relatively long gene-list and do not need to be so stringent, so we can apply a standard t-test
+
+```{r}
+library(genefilter)
 SampleGroup <- pData(colonData)$source_name_ch1
 Patient <- pData(colonData)$characteristics_ch1.1
-```
 
-We've previously explained the following steps to produce a table of DE genes.
+ttests <- rowttests(colonData.filt, fac=SampleGroup)
+cutoff <- 0.01
 
-```{r}
-design <- model.matrix(~0+SampleGroup)
-design
-colnames(design) <- c("Normal","Tumour")
-
-fit <- lmFit(exprs(colonData.filt), design)
-
-contrasts <- makeContrasts(Tumour - Normal, levels=design)
-fit2 <- contrasts.fit(fit, contrasts)
-
-fit2$genes <- fData(colonData.filt)[,c("Symbol","Entrez_Gene_ID","Chromosome","Cytoband")]
-
-fit2 <- eBayes(fit2)
-topTable(fit2)
+selected <- ttests$p.value < cutoff
+selectedEntrezIds <- fData(colonData.filt)$Entrez_Gene_ID[selected]
+length(selectedEntrezIds)
 ```
 
 
 ## Using online tools
 
-Even though this is a course advocating the use of R and Bioconductor, there are in fact many online tools that can assist with gene set analyses
+Even though this is a course advocating the use of R and Bioconductor, there are in fact many online tools that can assist with gene set analyses. [DAVID](https://david.ncifcrf.gov/) is a very popular tool and is able to accept gene lists in the form of Entrez IDs.
+
 
 ```{r}
-testResult <- decideTests(fit2)
-testResult
-```
-
-For example, one of the inputs that ***DAVID*** accepts is a text file of gene symbols. We can generate such a list from our DE results.
-
-```{r}
-deEntrez <- anno$Entrez_Gene_ID[which(abs(testResult) == 1) ]
-write.table(deEntrez, file="myEntrezGene.txt",sep="\t",quote=FALSE,row.names = FALSE)
+write.table(selectedEntrezIds, file="myEntrezGene.txt",sep="\t",quote=FALSE,row.names = FALSE)
 ```
 
 
 ## Over-representation analysis in Bioconductor: GOstats
-
-
-We are now going to create a gene universe by removing genes for will not contribute to the
-subsequent analysis. Such filtering is done without regarding the phenotype variables - hence
-a ”non-specific” filter. An Illumina Human6 chip contains around 48,00 probes, but less than
-half of these have enough detailed information to useful for a GO analysis. Therefore we re-
-strict the dataset to only probes for which we have a Entrez ID. It is also recommended to
-select probes with sufficient variability across samples to be interesting; as probes with little
-variability will no be interesting to the question we are trying to answer. The interquartile-
-range of each probe across all arrays is commonly used for this with a cut-off of 0.5.
-
-```{r}
-library (illuminaHumanv3.db)
-entrezIds = mget(rownames(exprs(colonData)) , illuminaHumanv3ENTREZID ,
-  ifnotfound = NA )
-
-haveEntrezId = names(entrezIds)[sapply(entrezIds , function (x) !is.na(x))]
-
-entrezSubset = exprs (colonData)[haveEntrezId , ]
-
-entrezIQR = apply(entrezSubset, 1 , IQR)
-
-selected = entrezIQR > 0.5
-
-nsFiltered = entrezSubset [selected ,]
-
-universeIds = unlist (mget(rownames(nsFiltered ) , illuminaHumanv3ENTREZID ,
-  ifnotfound = NA ))
-```
-
-Remember that the size of the universe can have an effect on the analysis. If the universe is
-made artificially large by including too many uninformative probes, the p-values for the GO
-terms will appear more significant.
-
-We now test the genes in the universe to see which ones have significant differences between
-the two groups. For this, we use the rowttests function implemented in the genefilter pack-
-age, which performs a t-test for each row with respect to a factor. The p-values of the test
-can be extracted, with one p-value given for each probe.
-
-```{r cache=TRUE}
-library (GOstats)
-library (genefilter)
-fac = as.factor(SampleGroup)
-ttests = rowttests(as.matrix(nsFiltered) , fac)
-
-smPV = ttests$p.value < 0.05
-
-pvalFiltered = nsFiltered [smPV , ]
-
-dim (pvalFiltered)
-
-selectedEntrezIds = unlist (mget(rownames(pvalFiltered) ,
-  illuminaHumanv3ENTREZID , ifnotfound = NA))
-
-```
 
 
 The hyperGTest function is used to do the hypergeometric test for GO terms. Rather than
@@ -329,7 +231,7 @@ summary (hgOver)[1:20 , ]
 ```
 
 GOstats also has the facility to test for KEGG pathways and chromosome bands which are
-over-reprsented. The procedure of creating a gene universe and set of selected genes is the
+over-represented. The procedure of creating a gene universe and set of selected genes is the
 same. However, we have to use a different object for the parameters, as not all
 
 ```{r cache=TRUE}
@@ -352,7 +254,7 @@ summary (chrHgOver)
 
 ## Theory Part II: Threshold-free
 
-For these tests, we don't have to specify a statistical threshold and use the test statistics from *all* genes as the input to the test. The popular *Gene Set Enrichment Analysis (GSEA)* uses this approach.
+For these tests, we don't have to specify a statistical threshold and use the test statistics from *all* genes as the input to the test. The popular *Gene Set Enrichment Analysis (GSEA)* uses this approach. These tests can be used to detect differential expression for a group of genes, even when the effects are too small or there is too little data to detect the genes individually.
 
 ![gsea](images/GSEA.png)
 
@@ -362,28 +264,109 @@ For these tests, we don't have to specify a statistical threshold and use the te
 A simple version of this test is implemented in the `geneSetTest` function in `limma`,
 which computes a p-value to test the hypothesis that the selected genes have more extreme
 test-statistics than one might expect by chance. Moreover, separate tests can be performed
-to see if the selected genes are up-regulated (alternative=up) or down-regulated (alterna-
-tive=down). The default is to test for extreme statistics regardless of sign.
+to see if the selected genes are up-regulated (`alternative=up`) or down-regulated (`alternative=down`). The default is to test for extreme statistics regardless of sign.
+
+To demonstrate, we will pick 50 genes at random. We have to supply the entire set of test statistics along indices of interest. The result of the `barcode` plot below shows there is no particular trend for genes we have picked be up- or down-regulated.
+
 
 ```{r}
 library (limma)
-library(illuminaHumanv3.db)
-ccGenes <- unlist (mget("04110" , revmap (illuminaHumanv3PATH)))
 
-ccInd <- which (rownames(colonData.filt)  %in% ccGenes)
+randGenes <- sample(1:nrow(ttests),50)
 
-geneSetTest (index = ccInd , statistics = fit2$t)
+geneSetTest (index = randGenes , statistics = ttests$statistic)
 
-geneSetTest (index = ccInd , statistics = fit2$t ,
+geneSetTest (index = randGenes , statistics = ttests$statistic ,
   alternative = "down" )
 
-geneSetTest (index = ccInd , statistics = fit2$t ,
+geneSetTest (index = randGenes , statistics = ttests$statistic ,
   alternative = "up" )
 
-barcodeplot (statistics = as.numeric(fit2$t) , index = ccInd )
-
-plot (density(fit2$t))
-
-lines (density (fit2$t[ccInd]) , col = " red " )
+barcodeplot (statistics = as.numeric(ttests$statistic) , index = randGenes )
 
 ```
+
+On the other hand, we could deliberately pick genes with a significant p-value and notice how the results are altered.
+
+
+```{r}
+
+myGenes <- which(ttests$p.value < 0.01)[1:50]
+
+geneSetTest (index = myGenes , statistics = ttests$statistic)
+
+geneSetTest (index = myGenes , statistics = ttests$statistic ,
+  alternative = "down" )
+
+geneSetTest (index = myGenes , statistics = ttests$statistic ,
+  alternative = "up" )
+
+barcodeplot (statistics = as.numeric(ttests$statistic) , index = myGenes )
+
+```
+
+We have already seen of example of searching for particular gene symbols in our output tables.
+
+```{r}
+mylist <- c("LOC441066","ARF3","FMNL3","CSF1R","XLKD1","TTRAP","DMWD","SYNPO2L","PILRB","LAMP3")
+myGenes <- which(anno.final$Symbol %in% mylist)
+geneSetTest (index = myGenes , statistics = ttests$statistic)
+
+geneSetTest (index = myGenes , statistics = ttests$statistic ,
+  alternative = "down" )
+
+geneSetTest (index = myGenes , statistics = ttests$statistic ,
+  alternative = "up" )
+
+barcodeplot (statistics = as.numeric(ttests$statistic) , index = myGenes )
+```
+
+## Converting between different identifiers
+
+There are facilities in Bioconductor for converting between different identifier (e.g. Entrez, Ensembl, Unigene) schemes. For each organism, there is a pre-built *database* package that allows various queries to be made. In this example, we will use the `org.Hs.eg.db` package for humans. Other organisms can be found on the list of [Bioconductor annotation packages](http://bioconductor.org/packages/release/BiocViews.html#___AnnotationData); just look for packages that start *org.*.
+
+An advantage of using these packages, rather than web services such as biomart, is that offline queries are possible.
+
+Each organism has a series of *columns* and *keys* defined. The *keys* are the identifers that you want to query, and the *columns* define the information that you want to retrieve.
+
+```{r}
+library(org.Hs.eg.db)
+columns(org.Hs.eg.db)
+keytypes(org.Hs.eg.db)
+```
+
+Lets' find out what the Entrez ID's are for the genes *TP53*, *BRCA1* and *PTEN*. We specify our `keys` as the vector of these names, our `keytype` is `SYMBOL` (which must be in the result we get back from doing `keytypes`) and the `columns` is `ENTREZID`. 
+
+```{r}
+select(org.Hs.eg.db, keys=c("TP53","BRCA1","PTEN"), keytype = "SYMBOL",columns = "ENTREZID")
+```
+
+We can choose to return multiple bits of information by changing the `columns` argument. In some cases though, you could get many results returned for the same key.
+
+```{r}
+select(org.Hs.eg.db, keys=c("TP53","BRCA1","PTEN"), keytype = "SYMBOL",columns = c("ENTREZID","ENSEMBL","UNIPROT"))
+```
+
+We can find out which genes belong to a particular path. e.g. the *Cell Cycle* pathway is KEGG: 04110 and the `keytype` is `PATH`.
+
+```{r}
+select(org.Hs.eg.db, keys="04110", keytype = "PATH",columns=c("SYMBOL","ENTREZID"))
+```
+
+Gene-Ontology terms can be queried using the `GOALL` keytype. Also returned in the result are the GO *evidence codes* and ontology type (BP = Biological Process, MF = Molecular Function).
+
+For example, we might be interested in the GO term *GO:0016072* and be interested in whether these genes are up- or down-regulated in our study. The first step would be to retrieve the Entrez IDs that correspond to this term.
+
+
+```{r}
+goQuery <- select(org.Hs.eg.db, keys="GO:0016072", keytype = "GOALL",columns=c("SYMBOL","ENTREZID"))
+head(goQuery)
+```
+
+We can match these Entrez IDs to our annotation object and proceed as before.
+
+```{r}
+myGenes <- which(anno.final$Entrez %in% goQuery$ENTREZ)
+geneSetTest (index = myGenes , statistics = ttests$statistic)
+```
+
