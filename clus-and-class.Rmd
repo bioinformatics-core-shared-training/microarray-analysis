@@ -55,8 +55,7 @@ The first step towards clustering the data is to construct a distance matrix. Ea
 this matrix is the pairwise distance between two samples. Note that for expression data we have to transpose the standard ExpressionSet format, as clustering is designed to work on
 rows rather than columns. The standard function to make a distance matrix in R is dist
 which uses the euclidean metric. As the data entries in a distance matrix are symmetrical, it
-has a different representation to the default matrix (i.e. values are not repeated unnecessar-
-ily), and clustering algorithms are able to accept this representation as input.
+has a different representation to the default matrix (i.e. values are not repeated unnecessarily), and clustering algorithms are able to accept this representation as input.
 
 ```{r}
 euc.dist <- dist (t(exprs(varFiltered)))
@@ -105,8 +104,7 @@ If we want to interpret the data presented in a clustering analysis, we need a w
 ing which samples are grouped together, or to determine the optimal grouping of samples.
 One intuitive way of assigning groups it to ’cut’ the dendrogram at a particular height on
 the y-axis. We can do this manually on the plot, or use the cutree function to return the
-labels of samples that are belong to the same group when the dendrogram is cut at the spec-
-ified height, h. Alternatively, we can specify how many groups, k, that we want to create.
+labels of samples that are belong to the same group when the dendrogram is cut at the specified height, h. Alternatively, we can specify how many groups, k, that we want to create.
 
 ```{r}
 library (cluster)
@@ -139,7 +137,7 @@ plot (silhouette(cutree(clust.cor, k=5),cor.dist),
 
 
 If we have prior knowledge of how many clusters to expect, we could run the clustering in a
-supervised manner. The Partition Around Medioids method can be used to group samples
+supervised manner. The ***Partition Around Medioids*** method can be used to group samples
 into k clusters.
 
 ```{r}
@@ -155,8 +153,7 @@ A heatmap is often used to visualise differences between samples. Each row repre
 gene and each column is an array and coloured cells indicate the expression levels of genes.
 Both samples and genes with similar expression profile are clustered together. By default,
 euclidean distances are used with complete linkage clustering.
-Drawing a heatmap in R uses a lot of memory and can take a long time, therefore reduc-
-ing the amount of data to be plotted is usually recommended. Including too many non-
+Drawing a heatmap in R uses a lot of memory and can take a long time, therefore reducing the amount of data to be plotted is usually recommended. Including too many non-
 informative genes can also make it difficult to spot patterns. Typically, data are filtered to
 include the genes which tell us the most about the biological variation. In an un-supervised
 setting, the selection of such genes is done without using prior knowledge about the sample
@@ -174,10 +171,8 @@ heatmap (as.matrix(exprs(varFiltered)[highVarGenes, ]),
 The default options for the heatmap are to cluster both the genes (rows) and samples (columns).
 However, sometimes we might want to specify a particular order. For example, we might
 want to order the columns according to sample groups. We can do this by re-ordering the
-input matrix manually and setting the Colv to NA. This tells the heatmap function not be
-cluster the columns. It choosing this option, we need to be careful that any column colour-
-ings or labels are set to the same ordering. Alternatively, a pre-calculated dendrogram could
-be used.
+input matrix manually and setting the `Colv` argument to `NA`. This tells the heatmap function not be
+cluster the columns. It choosing this option, we need to be careful that any column colourings or labels are set to the same ordering. Alternatively, a pre-calculated dendrogram could be used.
 
 ```{r}
 clus.ward <- hclust (cor.dist , method = "ward")
@@ -190,8 +185,7 @@ heatmap (as.matrix(exprs(varFiltered)[highVarGenes, ]) ,
 
 The heatmap function can be customised in many ways to make the output more informa-
 tive. For example, the labRow and labCol parameters can be used to give labels to the rows
-(genes) and columns (sample) of the heatmap. Similarly, ColSideColors and RowSideCol-
-ors give coloured labels, often used to indicate different groups which are know in advance.
+(genes) and columns (sample) of the heatmap. Similarly, `ColSideColors` and `RowSideColors` give coloured labels, often used to indicate different groups which are know in advance.
 See the help page for heatmap for more details.
 
 ```{r}
@@ -221,8 +215,10 @@ people with colour-blindness to interpret
 
 A popular use for heatmaps is to take an existing gene list (e.g. genes found to be significant
 in a previous study, or genes belonging to a particular pathway) and produce an image of
-how they cluster the data for exploratory purposes. This can be achieved easily by selecting
+how they cluster the data for exploratory purposes. This can be achieved by selecting
 the correct rows in the data matrix.
+
+Here we use the pre-built annotation package for the particular array platform (`illuminaHumanv3.db`). These packages contain mappings between the manufacturer identifiers, and more-common genomic identifiers. The `illuminaHumanv3PATH` mapping will take a set of illumina IDs and return the KEGG pathway for each. However, if we want the Illumina IDs for a particular KEGG pathway, we have to *reverse* the mapping. 
 
 ```{r}
 library (illuminaHumanv3.db)
@@ -235,13 +231,13 @@ heatmap (as.matrix(exprs(varFiltered)[pathwayGenes , ]),
 
 ```
 
+Later on, we will show how other identifier mapping can be performed using so-called organism packages.
+
 ## Principal Components Analysis
 
-Principal components analysis (PCA) is a data reduction technique that allows us to sim-
-plify multidimensional data sets to 2 or 3 dimensions for plotting purposes and identify which
+Principal components analysis (PCA) is a data reduction technique that allows us to simplify multidimensional data sets to 2 or 3 dimensions for plotting purposes and identify which
 factors explain the most variability in the data. We can use the prcomp function to perform
-a PCA and we have to supply it with a distance matrix. The resulting object contains infor-
-mation on the proportion of variance that is ’explained’ by each component. Ideally, we want
+a PCA and we have to supply it with a distance matrix. The resulting object contains information on the proportion of variance that is ’explained’ by each component. Ideally, we want
 to see that the majority of the variance is explained by the first 2 or 3 components, and that
 these components are associated with a biological factor
 
@@ -270,14 +266,10 @@ ggplot (pcRes , aes(x = PC1 , y = PC2 , col = SampleGroup ,
 
 # Classification
 
-The Bioconductor project has a collection of example datasets. Often these are used as ex-
-amples to illustrate a particular package or functionality, or to accompany the analysis pre-
-sented in a publication. For example, several datasets are presented to accompany the genefu
+The Bioconductor project has a collection of example datasets. Often these are used as examples to illustrate a particular package or functionality, or to accompany the analysis presented in a publication. For example, several datasets are presented to accompany the genefu
 package which has functions useful for the classification of breast cancer patients based on
 expression profiles.
-An experimental dataset can be installed and loaded as with any other Bioconductor pack-
-age. The data itself is saved as an object in the package. You will need to see the documen-
-tation for the package to find out the relevant object name. The full list of datasets available
+An experimental dataset can be installed and loaded as with any other Bioconductor package. The data itself is saved as an object in the package. You will need to see the documentation for the package to find out the relevant object name. The full list of datasets available
 through Bioconductor can be found [here](http://bioconductor.org/packages/release/BiocViews.html#___ExperimentData)
 
 ```{r}
@@ -332,12 +324,10 @@ model
 We can perform cross-validation using the pamr.cv function. Printing the output of this
 function shows a table of how many genes were used at each threshold, and the number of
 classification errors. Both these values need to be taken into account when choosing a suit-
-able theshold. The pamr.plotcv function can assist with this by producing a diagnostic plot
+able theshold. The `pamr.plotcv` function can assist with this by producing a diagnostic plot
 which shows how the error changes with the number of genes. In the plot produced by this
-function there are two panels; the top one shows the errors in the whole dataset and the bot-
-tom one considers each class separately. In each panel, the x axis corresponds to the thresh-
-old (and number of genes at each threshold) whereas the y-axis is the number of misclassifi-
-cations.
+function there are two panels; the top one shows the errors in the whole dataset and the bottom one considers each class separately. In each panel, the x axis corresponds to the thresh-
+old (and number of genes at each threshold) whereas the y-axis is the number of misclassifications.
 
 ```{r}
 model.cv <- pamr.cv(model , train.dat , nfold = 10)
@@ -346,7 +336,7 @@ pamr.plotcv(model.cv)
 ```
 
 In the following sections, feel free to experiment with different values of the threshold
-(which we will call Delta)
+(which we will call `Delta`)
 The misclassifications can easily be visualised as a ’confusion table’. This simply tabulates
 the classes assigned to each sample against the original label assigned to the sample. e.g.
 Misclassifications are samples that we thought were ’ER+’ but have been assigned to the
@@ -357,7 +347,7 @@ Delta <- 8
 pamr.confusion(model.cv , Delta)
 ```
 
-A visual representation of the class separation can be obtained using the pamr.plotcvprob
+A visual representation of the class separation can be obtained using the `pamr.plotcvprob`
 function. For each sample there are two circles representing the probabilty of that sample
 being classified ER- (red) or ER+ (green).
 
@@ -368,7 +358,7 @@ pamr.plotcvprob(model , train.dat , Delta )
 There are a couple of ways of extract the details of the genes that have been used in the
 classifier. We can list their names using the pamr.listgenes function, which in our case
 these are just returns the microarray probe names. We can however, use these IDs to query
-the featureData stored with the original vdx object. We can also plot the expression values
+the `featureData` stored with the original `vdx` object. We can also plot the expression values
 for each gene, coloured according to the class label.
 
 
@@ -378,10 +368,10 @@ classifierGenes <- pamr.listgenes(model , train.dat , Delta )[,1]
 pamr.geneplot(model , train.dat ,Delta)
 ```
 
-You may get an error message Error in plot.new(): Figure margins too large
+***You may get an error message Error in plot.new(): Figure margins too large
 when trying to produce the gene plot. If this occurs, try increasing the size of your plotting
 window, or decrease the number of genes by decreasing the threshold. Alternatively, the fol-
-lowing code will write the plots to a pdf.
+lowing code will write the plots to a pdf.***
 
 ```{r}
 pdf ("classifierProfiles.pdf")
@@ -439,8 +429,7 @@ heatmap (exprs(transbig.filt)[classifierGenes , ] , labRow = symbols ,
 
 
 An attractive feature of the vdx dataset is that it includes survival data for each breast can-
-cer patient. We are not explicitly covering survival analysis in this course, but for your ref-
-erence, here are the commands to create survival curves when patients are grouped by ER
+cer patient. We are not explicitly covering survival analysis in this course, but for your reference, here are the commands to create survival curves when patients are grouped by ER
 status and tumour grade.
 
 ```{r}
