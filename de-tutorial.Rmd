@@ -19,9 +19,9 @@ library(limma)
 ```{r cache=TRUE}
 library(GEOquery)
 library(limma)
-url <- "ftp://ftp.ncbi.nih.gov/pub/geo/DATA/SeriesMatrix/GSE33126/"
-filenm <- "GSE33126_series_matrix.txt.gz"
-if(!file.exists("GSE33126_series_matrix.txt.gz")) download.file(paste(url, filenm, sep=""), destfile=filenm)
+url <- "ftp://ftp.ncbi.nih.gov/pub/geo/DATA/SeriesMatrix/GSE33126/GSE33126_series_matrix.txt.gz"
+filenm <- "data/GSE33126_series_matrix.txt.gz"
+if(!file.exists(filenm)) download.file(url, destfile=filenm)
 gse <- getGEO(filename=filenm)
 gse
 ```
@@ -183,14 +183,46 @@ decideTests(fit2)
 table(decideTests(fit2))
 ```
 
+The "*Volcano Plot*" function is a common way of visualising the results of a DE analysis. The $x$ axis shows the log-fold change and the $y$ axis is some measure of statistical significance, which in this case is the log-odds, or "B" statistic. A characteristic "volcano" shape should be seen.
 
 ```{r}
 volcanoplot(fit2)
 ```
 
+The function also has options to highlight the postions of the top N genes from the test. 
+
+```{r}
+volcanoplot(fit2,highlight=10,names = fit2$genes$"Symbol")
+```
+
+
 # Exporting the results
 
 ```{r}
 write.fit(fit2, file = "de-results.txt",adjust="BH")
+```
+
+# Getting the results for a particular gene
+
+The `topTable` function by default only prints the top 10 DE genes. However, by changing the arguments we can make it print the statistics for all the genes that we test. 
+
+```{r}
+testResults <- topTable(fit2, number=nrow(fit2))
+```
+
+This gives us the opportunity to look-up the results for particular genes of interest. Lets say we're interested in "OCIAD2" (for no particular reason...)
+
+```{r}
+testResults[which(testResults$Symbol == "OCIAD2"),]
+```
+
+
+If we have a list of genes, the `%in%` function can be used.
+
+```{r}
+mylist <- c("LOC441066","ARF3","FMNL3","CSF1R","XLKD1","TTRAP","DMWD","SYNPO2L","PILRB","LAMP3")
+
+testResults[which(testResults$Symbol %in% mylist),]
+
 ```
 
