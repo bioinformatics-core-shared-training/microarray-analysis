@@ -424,4 +424,3 @@ clinvars <- separate(clinvars, col="characteristics_ch1.1",sep=":",into=c("chara
 head(clinvars)
 ```
 
-## Using both feature and clinical information
