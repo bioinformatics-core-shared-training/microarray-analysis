@@ -14,7 +14,7 @@ library(limma)
 In this section we give an example of how to find a list of relevant pathways / GO terms
 from a list of differentially-expressed genes. 
 
-## Theory Part I: Over-representaion analysis
+## Theory Part I: Over-representation analysis
 
 - "Threshold-based": require defintion of a statistical threshold to define list of genes to test (e.g. FDR < 0.01)
 - Hypergeometric test, Fisher's Exact test is used.
@@ -120,8 +120,7 @@ exprs(colonData) <- log2(exprs(colonData))
 We are now going to create a gene universe by removing genes for will not contribute to the
 subsequent analysis. Such filtering is done without regarding the phenotype variables - hence
 a ”non-specific” filter. An Illumina Human6 chip contains around 48,00 probes, but less than
-half of these have enough detailed information to useful for a GO analysis. Therefore we re-
-strict the dataset to only probes for which we have a Entrez ID. 
+half of these have enough detailed information to useful for a GO analysis. Therefore we restrict the dataset to only probes for which we have a Entrez ID. 
 
 We will identify the probes that have an Entrez ID.
 
@@ -132,23 +131,44 @@ hasEntrez <- which(anno$Entrez_Gene_ID != "")
 colonData.filt <- colonData[hasEntrez,]
 ```
 
-In the following, we filter further by collapsing to unique Entrez IDs. The IQR is used as a criteria for selecting the *best* probe for each gene
+In the following, we filter further by collapsing to unique Entrez IDs. The IQR is used as a criteria for selecting the *best* probe for each gene. To perform this selection we make use of the `apply` function in R. This is a convenient means of doing the same calculation for each row (or column) in a matrix. In our case, we want to calculate the IQR (using the `IQR` function) of each row in the matrix `exprs(colonData.filt)`. 
 
 ```{r}
-
 testStat <- apply(exprs(colonData.filt),1, IQR,na.rm=TRUE)
+length(testStat)
+```
+
+Next we group together the iqrs for probes that represent the same Entrez ID. This we do using `split`. The result is a *list* with each item in the list containing the names of the probes for that Entrez ID and the IQRs. 
+
+```{r}
 lls <- fData(colonData.filt)$Entrez_Gene_ID
 tSsp = split.default(testStat, lls)
-selectedID <- sapply(tSsp, function(x) names(which.max(x)))
+tSsp[[1]]
+anno[names(tSsp[[1]]),]
+```
 
+We can select the appropriate probe
+
+
+```{r}
+which.max(tSsp[[1]])
+names(which.max(tSsp[[1]]))
+selectedID <- sapply(tSsp, function(x) names(which.max(x)))
+selectedID[1]
+```
+
+We can then filter the `colonData.filt` object again.
+
+```{r}
 colonData.filt <- colonData.filt[unlist(selectedID),]
 length(unique(fData(colonData.filt)$Entrez_Gene_ID))
 any(duplicated(fData(colonData.filt)$Entrez_Gene_ID))
 ```
 
-After this filtering, we are left with 
 
-It is also recommended to select probes with sufficient variability across samples to be interesting; as probes with little variability will no be interesting to the question we are trying to answer. The IQR of each probe across all arrays is commonly used for this with a cut-off of 0.25.
+After this filtering, we are left with `r length(unique(fData(colonData.filt)$Entrez_Gene_ID))` unique Entrez IDs. However, not all these genes will be expressed, or changing, in the conditions we are investigating.
+
+It is also recommended to select probes with sufficient variability across samples to be interesting; as probes with little variability will no be interesting to the question we are trying to answer. The IQR of each probe across all arrays is commonly used for this. We will choose a cut-off of 0.25.
 
 ```{r}
 entrezIQR = apply(exprs(colonData.filt), 1 , IQR)
@@ -186,11 +206,14 @@ length(selectedEntrezIds)
 
 Even though this is a course advocating the use of R and Bioconductor, there are in fact many online tools that can assist with gene set analyses. [DAVID](https://david.ncifcrf.gov/) is a very popular tool and is able to accept gene lists in the form of Entrez IDs.
 
+We write the selected Entrez IDs to a text file. So that the file is recognised by DAVID, we need to specify the argument `row.names=FALSE` to make sure that row numbers do not appear in the file.
+
 
 ```{r}
 write.table(selectedEntrezIds, file="myEntrezGene.txt",sep="\t",quote=FALSE,row.names = FALSE)
 ```
 
+You can upload this text file to the DAVID website, along with the gene universe we created previously, and follow the instructions.
 
 ## Over-representation analysis in Bioconductor: GOstats
 
@@ -211,6 +234,7 @@ time. The meanings of these parameters are as follows:
 
   
 ```{r cache=TRUE}
+library(GOstats)
 params = new ("GOHyperGParams" , geneIds = selectedEntrezIds , 
               universeGeneIds = universeIds , annotation = "illuminaHumanv3" ,
               ontology =  "BP" , pvalueCutoff = 0.05 , conditional = FALSE ,
@@ -260,6 +284,18 @@ For these tests, we don't have to specify a statistical threshold and use the te
 
 *Subramanian et al, PNAS 2005*
 
+The Broad institute provides [a version of GSEA](http://software.broadinstitute.org/gsea/index.jsp) that can be run via a java application. However, it requires you to convert your data into a particular format. A more convenient option is [***GeneTrail***](http://genetrail.bioinf.uni-sb.de/enrichment_analysis.php?js=1&cc=1) which has the option to do a GSEA-style analysis.
+
+The required input text contains a set of gene identifiers that are ordered according to some test statistic. To produce such a file, we first have to order the t-statistics from our test `ttests$statistic` with the `order` function.
+
+```{r}
+gseaList <- anno.final$Entrez_Gene_ID[order(ttests$statistic,decreasing = TRUE)]
+write.table(gseaList, file="genetrail-gsea.txt",sep="\t",row.names = FALSE,quote=FALSE)
+```
+
+Note that Genetrail can also be used for the Over-Representation analysis that we saw in the previous section.
+
+## A Threshold-free test in Bioconductor
 
 A simple version of this test is implemented in the `geneSetTest` function in `limma`,
 which computes a p-value to test the hypothesis that the selected genes have more extreme
