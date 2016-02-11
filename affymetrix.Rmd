@@ -1,6 +1,6 @@
 ---
 title: "Affymetrix"
-author: "Mark Dunning"
+author: "Mark Dunning; mark 'dot' dunning 'at' cruk.cam.ac.uk, Oscar Rueda; oscar 'dot' rueda 'at' cruk.cam.ac.uk"
 date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
 output: html_document
 ---

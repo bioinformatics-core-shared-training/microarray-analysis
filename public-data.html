@@ -8,7 +8,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
 
-<meta name="author" content="Mark Dunning" />
+<meta name="author" content="Mark Dunning; mark.dunning@cruk.cam.ac.uk" />
 
 
 <title>Importing publicly available data</title>
@@ -62,8 +62,8 @@ img {
 
 <div id="header">
 <h1 class="title">Importing publicly available data</h1>
-<h4 class="author"><em>Mark Dunning</em></h4>
-<h4 class="date"><em>Last modified: 10 Feb 2016</em></h4>
+<h4 class="author"><em>Mark Dunning; <a href="mailto:mark.dunning@cruk.cam.ac.uk">mark.dunning@cruk.cam.ac.uk</a></em></h4>
+<h4 class="date"><em>Last modified: 11 Feb 2016</em></h4>
 </div>
 
 
@@ -412,7 +412,7 @@ destfile &lt;- &quot;data/GSE18088_series_matrix.txt.gz&quot;
 if(!file.exists(destfile)) download.file(remotefile, destfile)
 cohort &lt;- getGEO(filename=&quot;data/GSE18088_series_matrix.txt.gz&quot;)</code></pre>
 <pre><code>## File stored at: 
-## /tmp/RtmpmH1obg/GPL570.soft</code></pre>
+## /tmp/RtmpiHVZwN/GPL570.soft</code></pre>
 <pre class="r"><code>cohort</code></pre>
 <pre><code>## ExpressionSet (storageMode: lockedEnvironment)
 ## assayData: 54675 features, 53 samples 
@@ -565,7 +565,7 @@ hist(clinvars$characteristics_ch1.4)</code></pre>
 <pre><code>## sex
 ## female   male 
 ##     27     26</code></pre>
-<p>Another relevant function is <code>substr</code>, which prints the portion of a string between a start and end position. In other case, we want strings that start after the <code>:</code> character (which is letter number 9) and go all the way to the end of the string. The length of the string can vary, but can be retrieved using the <code>nchar</code> function</p>
+<p>Another relevant function is <code>substr</code>, which prints the portion of a string between a start and end position. In our case, we want strings that start after the <code>:</code> character (which is letter number 9 in the string) and go all the way to the end of the string. The length of the string can vary, but can be retrieved using the <code>nchar</code> function</p>
 <pre class="r"><code>nchar(as.character(clinvars$characteristics_ch1.1))</code></pre>
 <pre><code>##  [1] 12 14 14 12 12 12 14 14 12 14 12 14 14 12 14 14 14 12 14 14 12 14 12
 ## [24] 12 12 14 12 12 12 12 14 14 12 12 12 14 14 14 14 12 14 12 14 12 14 12
@@ -580,38 +580,248 @@ sex</code></pre>
 ## [36] &quot;female&quot; &quot;female&quot; &quot;female&quot; &quot;female&quot; &quot;male&quot;   &quot;female&quot; &quot;male&quot;  
 ## [43] &quot;female&quot; &quot;male&quot;   &quot;female&quot; &quot;male&quot;   &quot;female&quot; &quot;female&quot; &quot;male&quot;  
 ## [50] &quot;male&quot;   &quot;male&quot;   &quot;female&quot; &quot;female&quot;</code></pre>
-<p>The <code>separate</code> function from the <code>tidyr</code> package can also be of some use. It can be used on a column where all the entries contain some common separator, in our case <code>:</code>.</p>
-<pre class="r"><code>library(tidyr)
-clinvars &lt;- separate(clinvars, col=&quot;characteristics_ch1.1&quot;,sep=&quot;:&quot;,into=c(&quot;characteristics_ch1.1&quot;,&quot;gender&quot;))
-head(clinvars)</code></pre>
-<pre><code>##              characteristics_ch1 characteristics_ch1.1  gender
-## GSM452148 localization: proximal                gender    male
-## GSM452149   localization: distal                gender  female
-## GSM452150   localization: distal                gender  female
-## GSM452151 localization: proximal                gender    male
-## GSM452152   localization: distal                gender    male
-## GSM452153 localization: proximal                gender    male
-##           characteristics_ch1.2           characteristics_ch1.3
-## GSM452148           relapse: no microsatellite status: MSI-high
-## GSM452149           relapse: no      microsatellite status: MSS
-## GSM452150           relapse: no      microsatellite status: MSS
-## GSM452151           relapse: no      microsatellite status: MSS
-## GSM452152           relapse: no      microsatellite status: MSS
-## GSM452153           relapse: no microsatellite status: MSI-high
-##           characteristics_ch1.4 characteristics_ch1.5
-## GSM452148                    61           grading: G2
-## GSM452149                    65           grading: G3
-## GSM452150                    56           grading: G3
-## GSM452151                    56           grading: G2
-## GSM452152                    74           grading: G2
-## GSM452153                    56           grading: G2
-##           characteristics_ch1.6
-## GSM452148                 pt: 3
-## GSM452149                 pt: 3
-## GSM452150                 pt: 3
-## GSM452151                 pt: 3
-## GSM452152                 pt: 3
-## GSM452153                 pt: 4</code></pre>
+</div>
+</div>
+<div id="appendix" class="section level1">
+<h1>Appendix</h1>
+<div id="supplementary-data-from-geo" class="section level2">
+<h2>Supplementary data from GEO</h2>
+<p>Example from the Bioconductor course in <a href="http://bioconductor.org/help/course-materials/2015/Uruguay2015/">Montevideo, Uruguay</a></p>
+<p>We can also download supplementary files from GEO. In the case of Affymetrix arrays, this may include the <em>.CEL</em> files</p>
+<pre class="r"><code>x = getGEOSuppFiles(&quot;GSE20986&quot;)</code></pre>
+<pre><code>## ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE20nnn/GSE20986/suppl/</code></pre>
+<pre class="r"><code>x</code></pre>
+<pre><code>##                                                                                           size
+## /home/dunnin01/work/git/shared-training/microarray-analysis/GSE20986/GSE20986_RAW.tar 56360960
+## /home/dunnin01/work/git/shared-training/microarray-analysis/GSE20986/filelist.txt          740
+##                                                                                       isdir
+## /home/dunnin01/work/git/shared-training/microarray-analysis/GSE20986/GSE20986_RAW.tar FALSE
+## /home/dunnin01/work/git/shared-training/microarray-analysis/GSE20986/filelist.txt     FALSE
+##                                                                                       mode
+## /home/dunnin01/work/git/shared-training/microarray-analysis/GSE20986/GSE20986_RAW.tar  644
+## /home/dunnin01/work/git/shared-training/microarray-analysis/GSE20986/filelist.txt      644
+##                                                                                                     mtime
+## /home/dunnin01/work/git/shared-training/microarray-analysis/GSE20986/GSE20986_RAW.tar 2016-02-10 11:29:31
+## /home/dunnin01/work/git/shared-training/microarray-analysis/GSE20986/filelist.txt     2016-02-10 11:29:33
+##                                                                                                     ctime
+## /home/dunnin01/work/git/shared-training/microarray-analysis/GSE20986/GSE20986_RAW.tar 2016-02-10 11:29:31
+## /home/dunnin01/work/git/shared-training/microarray-analysis/GSE20986/filelist.txt     2016-02-10 11:29:33
+##                                                                                                     atime
+## /home/dunnin01/work/git/shared-training/microarray-analysis/GSE20986/GSE20986_RAW.tar 2016-02-10 11:22:54
+## /home/dunnin01/work/git/shared-training/microarray-analysis/GSE20986/filelist.txt     2016-02-10 11:13:23
+##                                                                                        uid
+## /home/dunnin01/work/git/shared-training/microarray-analysis/GSE20986/GSE20986_RAW.tar 1000
+## /home/dunnin01/work/git/shared-training/microarray-analysis/GSE20986/filelist.txt     1000
+##                                                                                        gid
+## /home/dunnin01/work/git/shared-training/microarray-analysis/GSE20986/GSE20986_RAW.tar 1000
+## /home/dunnin01/work/git/shared-training/microarray-analysis/GSE20986/filelist.txt     1000
+##                                                                                          uname
+## /home/dunnin01/work/git/shared-training/microarray-analysis/GSE20986/GSE20986_RAW.tar dunnin01
+## /home/dunnin01/work/git/shared-training/microarray-analysis/GSE20986/filelist.txt     dunnin01
+##                                                                                         grname
+## /home/dunnin01/work/git/shared-training/microarray-analysis/GSE20986/GSE20986_RAW.tar dunnin01
+## /home/dunnin01/work/git/shared-training/microarray-analysis/GSE20986/filelist.txt     dunnin01</code></pre>
+<p>The supplementary file comes as a <em>tar</em> archive, which we need to extract to get the individual cel files.</p>
+<pre class="r"><code>untar(&quot;GSE20986/GSE20986_RAW.tar&quot;, exdir = &quot;suppdata&quot;)
+list.files(&quot;suppdata/&quot;)</code></pre>
+<pre><code>##  [1] &quot;GSM524662.CEL&quot;    &quot;GSM524662.CEL.gz&quot; &quot;GSM524663.CEL&quot;   
+##  [4] &quot;GSM524663.CEL.gz&quot; &quot;GSM524664.CEL&quot;    &quot;GSM524664.CEL.gz&quot;
+##  [7] &quot;GSM524665.CEL&quot;    &quot;GSM524665.CEL.gz&quot; &quot;GSM524666.CEL&quot;   
+## [10] &quot;GSM524666.CEL.gz&quot; &quot;GSM524667.CEL&quot;    &quot;GSM524667.CEL.gz&quot;
+## [13] &quot;GSM524668.CEL&quot;    &quot;GSM524668.CEL.gz&quot; &quot;GSM524669.CEL&quot;   
+## [16] &quot;GSM524669.CEL.gz&quot; &quot;GSM524670.CEL&quot;    &quot;GSM524670.CEL.gz&quot;
+## [19] &quot;GSM524671.CEL&quot;    &quot;GSM524671.CEL.gz&quot; &quot;GSM524672.CEL&quot;   
+## [22] &quot;GSM524672.CEL.gz&quot; &quot;GSM524673.CEL&quot;    &quot;GSM524673.CEL.gz&quot;</code></pre>
+<p>Each cel file is zipped, so we unzip with <em>gunzip</em>.</p>
+<pre class="r"><code>cels = list.files(&quot;suppdata/&quot;, pattern = &quot;[gz]&quot;)
+sapply(paste(&quot;suppdata&quot;, cels, sep = &quot;/&quot;), gunzip)</code></pre>
+<pre><code>## suppdata/GSM524662.CEL.gz suppdata/GSM524663.CEL.gz 
+##                  13555726                  13555055 
+## suppdata/GSM524664.CEL.gz suppdata/GSM524665.CEL.gz 
+##                  13555639                  13560122 
+## suppdata/GSM524666.CEL.gz suppdata/GSM524667.CEL.gz 
+##                  13555663                  13557614 
+## suppdata/GSM524668.CEL.gz suppdata/GSM524669.CEL.gz 
+##                  13556090                  13560054 
+## suppdata/GSM524670.CEL.gz suppdata/GSM524671.CEL.gz 
+##                  13555971                  13554926 
+## suppdata/GSM524672.CEL.gz suppdata/GSM524673.CEL.gz 
+##                  13555042                  13555290</code></pre>
+<p>We can now proceed as with the Affymetrix workflow.</p>
+<pre class="r"><code>library(affy)
+raw &lt;- ReadAffy(celfile.path = &quot;suppdata/&quot;)
+raw</code></pre>
+<pre><code>## Warning: replacing previous import by 'utils::tail' when loading
+## 'hgu133plus2cdf'</code></pre>
+<pre><code>## Warning: replacing previous import by 'utils::head' when loading
+## 'hgu133plus2cdf'</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## AffyBatch object
+## size of arrays=1164x1164 features (20 kb)
+## cdf=HG-U133_Plus_2 (54675 affyids)
+## number of samples=12
+## number of genes=54675
+## annotation=hgu133plus2
+## notes=</code></pre>
+<pre class="r"><code>boxplot(raw)</code></pre>
+<p><img src="data:image/png;base64,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" title alt width="672" /></p>
+</div>
+<div id="data-in-arrayexpress" class="section level2">
+<h2>Data in ArrayExpress</h2>
+<p>The ArrayExpress vignette has various examples of importing data from the <strong><em>ArrayExpress</em></strong> repository into R. Similar to <code>getGEO</code> from <code>GEOquery</code>, the <code>getAE</code> function can do the import if the accession number is known. If we want just normalised data, we set an argument <code>type=processed</code>.</p>
+<pre class="r"><code>library(ArrayExpress)
+mydata &lt;- getAE(&quot;E-GEOD-69017&quot;,type=&quot;processed&quot;)</code></pre>
+<pre><code>## Copying processed data files
+## 
+## Unpacking data files</code></pre>
+<pre class="r"><code>mydata</code></pre>
+<pre><code>## $path
+## [1] &quot;/home/dunnin01/work/git/shared-training/microarray-analysis&quot;
+## 
+## $rawFiles
+## NULL
+## 
+## $rawArchive
+## NULL
+## 
+## $processedFiles
+##  [1] &quot;GSM1690180_sample_table.txt&quot; &quot;GSM1690179_sample_table.txt&quot;
+##  [3] &quot;GSM1690178_sample_table.txt&quot; &quot;GSM1690177_sample_table.txt&quot;
+##  [5] &quot;GSM1690176_sample_table.txt&quot; &quot;GSM1690175_sample_table.txt&quot;
+##  [7] &quot;GSM1690174_sample_table.txt&quot; &quot;GSM1690173_sample_table.txt&quot;
+##  [9] &quot;GSM1690172_sample_table.txt&quot; &quot;GSM1690171_sample_table.txt&quot;
+## [11] &quot;GSM1690170_sample_table.txt&quot; &quot;GSM1690169_sample_table.txt&quot;
+## [13] &quot;GSM1690168_sample_table.txt&quot; &quot;GSM1690167_sample_table.txt&quot;
+## [15] &quot;GSM1690166_sample_table.txt&quot; &quot;GSM1690165_sample_table.txt&quot;
+## [17] &quot;GSM1690164_sample_table.txt&quot; &quot;GSM1690163_sample_table.txt&quot;
+## [19] &quot;GSM1690162_sample_table.txt&quot; &quot;GSM1690161_sample_table.txt&quot;
+## [21] &quot;GSM1690160_sample_table.txt&quot; &quot;GSM1690159_sample_table.txt&quot;
+## [23] &quot;GSM1690158_sample_table.txt&quot; &quot;GSM1690157_sample_table.txt&quot;
+## [25] &quot;GSM1690156_sample_table.txt&quot; &quot;GSM1690155_sample_table.txt&quot;
+## [27] &quot;GSM1690154_sample_table.txt&quot; &quot;GSM1690153_sample_table.txt&quot;
+## [29] &quot;GSM1690152_sample_table.txt&quot; &quot;GSM1690151_sample_table.txt&quot;
+## [31] &quot;GSM1690150_sample_table.txt&quot; &quot;GSM1690149_sample_table.txt&quot;
+## [33] &quot;GSM1690148_sample_table.txt&quot; &quot;GSM1690147_sample_table.txt&quot;
+## [35] &quot;GSM1690146_sample_table.txt&quot; &quot;GSM1690145_sample_table.txt&quot;
+## [37] &quot;GSM1690144_sample_table.txt&quot; &quot;GSM1690143_sample_table.txt&quot;
+## [39] &quot;GSM1690142_sample_table.txt&quot; &quot;GSM1690141_sample_table.txt&quot;
+## [41] &quot;GSM1690140_sample_table.txt&quot; &quot;GSM1690139_sample_table.txt&quot;
+## [43] &quot;GSM1690138_sample_table.txt&quot; &quot;GSM1690137_sample_table.txt&quot;
+## [45] &quot;GSM1690136_sample_table.txt&quot; &quot;GSM1690135_sample_table.txt&quot;
+## [47] &quot;GSM1690134_sample_table.txt&quot; &quot;GSM1690133_sample_table.txt&quot;
+## [49] &quot;GSM1690132_sample_table.txt&quot; &quot;GSM1690131_sample_table.txt&quot;
+## [51] &quot;GSM1690130_sample_table.txt&quot;
+## 
+## $processedArchive
+## [1] &quot;E-GEOD-69017.processed.1.zip&quot;
+## 
+## $sdrf
+## [1] &quot;E-GEOD-69017.sdrf.txt&quot;
+## 
+## $idf
+## [1] &quot;E-GEOD-69017.idf.txt&quot;
+## 
+## $adf
+## [1] &quot;A-AFFY-33.adf.txt&quot;</code></pre>
+<p>Alternatively, we can get the full dataset (including raw cel files) with <code>type=full</code>.</p>
+<pre class="r"><code>rawdata &lt;- getAE(&quot;E-GEOD-69017&quot;,type=&quot;full&quot;)</code></pre>
+<pre><code>## Copying raw data files
+## 
+## Copying processed data files
+## 
+## Unpacking data files</code></pre>
+<p>We can process the <em>cel</em> files using the Affymetrix workflow, or <code>ArrayExpress</code> can process them for us.</p>
+<pre class="r"><code>procdata &lt;- ae2bioc(rawdata)</code></pre>
+<pre><code>## ArrayExpress: Reading pheno data from SDRF
+## ArrayExpress: Reading data files
+## Loading required package: pd.hg.u133a
+## Loading required package: Biostrings
+## Loading required package: S4Vectors
+## Loading required package: stats4
+## Loading required package: IRanges
+## 
+## Attaching package: 'IRanges'
+## 
+## The following object is masked from 'package:tidyr':
+## 
+##     expand
+## 
+## Loading required package: XVector
+## Loading required package: RSQLite
+## Loading required package: DBI
+## Loading required package: oligoClasses
+## Welcome to oligoClasses version 1.32.0
+## 
+## Attaching package: 'oligoClasses'
+## 
+## The following object is masked from 'package:affy':
+## 
+##     list.celfiles
+## 
+## Loading required package: oligo
+## ===========================================================================
+## Welcome to oligo version 1.34.0
+## ===========================================================================
+## 
+## Attaching package: 'oligo'
+## 
+## The following objects are masked from 'package:affy':
+## 
+##     intensity, MAplot, mm, mm&lt;-, mmindex, pm, pm&lt;-, pmindex,
+##     probeNames, rma
+## 
+## Platform design info loaded.</code></pre>
+<pre><code>## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690180_039_SUM-149PT.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690179_024_MDA-MB134-VI.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690178_015_HCC1954.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690177_10_BT20.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690176_013_HCC1143.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690175_06_MDA-MB453.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690174_06.SKBR3.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690173_023_MDA-MB157.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690172_027_MDA-MB175-VII.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690171_05.BT549.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690170_022_HCC1937.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690169_044_CAMA-1.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690168_038_SUM-52PE.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690167_025_HS578T.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690166_02.MCF7.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690165_030_MDA-MB415.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690164_10._ZR-75-B.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690163_CC_MCF10A_U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690162_08._SUM225.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690161_09.LY2.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690160_11.MDA_MB-468.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690159_019_HCC2157.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690158_037_SUM-44PE.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690157_01._AU-565.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690156_042_SUM-190PT.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690155_031_MDA-MB435.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690154_018_HCC1428.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690153_020_HCC1007.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690152_016_HCC202.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690151_032_MDA-MB436.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690150_035_ZR75-1.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690149_021_HCC2185.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690148_03_HCCC38.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690147_07.HBL100.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690146_040_SUM-159PT.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690145_02._HCC70.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690144_11_BT483.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690143_08.600MPE.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690142_07._MCF-12A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690141_10.MDA_MB-231.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690140_034_ZR75-30.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690139_08_MDA-MB361.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690138_041_SUM-185PE.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690137_014_HCC1569.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690136_09._UACC812.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690135_043_SUM-1315-MO2.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690134_036_T47D.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690133_04._HCC1187.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690132_017_HCC3153.U133A.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690131_05._HCC1500.CEL
+## Reading in : /home/dunnin01/work/git/shared-training/microarray-analysis/GSM1690130_01.BT474.U133A.CEL</code></pre>
 </div>
 </div>
 

@@ -1,6 +1,6 @@
 ---
 title: "Illumina"
-author: "Mark Dunning"
+author: "Mark Dunning; mark 'dot' dunning 'at' cruk.cam.ac.uk, Oscar Rueda; oscar 'dot' rueda 'at' cruk.cam.ac.uk"
 date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
 output: html_document
 ---
@@ -166,7 +166,7 @@ A more-common form for Illumina data to be distributed is the output of Illumina
 
 The *limma* package is one of the most highly-cited pacakges in Bioconductor, and as we will see later has some powerful tools for differential expression analysis. A workflow to import and normalise data that have been exported from GenomeStudio is described in Section 17.3 of the [limma users guide](http://www.bioconductor.org/packages/release/bioc/vignettes/limma/inst/doc/usersguide.pdf). 
 
-
+Data for this section can be downloaded from the [WEHI](http://bioinf.wehi.edu.au/marray/IlluminaCaseStudy/) and un-zipped in the `data` directory.
 
 ```{r}
 library(limma)

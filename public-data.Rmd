@@ -1,6 +1,6 @@
 ---
 title: "Importing publicly available data"
-author: "Mark Dunning"
+author: "Mark Dunning; mark.dunning@cruk.cam.ac.uk"
 date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
 output: html_document
 ---
@@ -408,7 +408,7 @@ sex<- gsub("gender: ","",clinvars$characteristics_ch1.1)
 table(sex)
 ```
 
-Another relevant function is `substr`, which prints the portion of a string between a start and end position. In other case, we want strings that start after the `:` character (which is letter number 9) and go all the way to the end of the string. The length of the string can vary, but can be retrieved using the `nchar` function
+Another relevant function is `substr`, which prints the portion of a string between a start and end position. In our case, we want strings that start after the `:` character (which is letter number 9 in the string) and go all the way to the end of the string. The length of the string can vary, but can be retrieved using the `nchar` function
 
 ```{r}
 nchar(as.character(clinvars$characteristics_ch1.1))
@@ -416,11 +416,62 @@ sex <- substr(clinvars$characteristics_ch1.1,9,nchar(as.character(clinvars$chara
 sex
 ```
 
-The `separate` function from the `tidyr` package can also be of some use. It can be used on a column where all the entries contain some common separator, in our case `:`. 
 
-```{r}
-library(tidyr)
-clinvars <- separate(clinvars, col="characteristics_ch1.1",sep=":",into=c("characteristics_ch1.1","gender"))
-head(clinvars)
+
+# Appendix
+
+## Supplementary data from GEO
+
+Example from the Bioconductor course in [Montevideo, Uruguay](http://bioconductor.org/help/course-materials/2015/Uruguay2015/)
+
+We can also download supplementary files from GEO. In the case of Affymetrix arrays, this may include the *.CEL* files
+
+```{r cache=TRUE}
+x = getGEOSuppFiles("GSE20986")
+x
+```
+
+The supplementary file comes as a *tar* archive, which we need to extract to get the individual cel files.
+
+```{r cache=TRUE}
+untar("GSE20986/GSE20986_RAW.tar", exdir = "suppdata")
+list.files("suppdata/")
+```
+
+Each cel file is zipped, so we unzip with *gunzip*.
+
+```{r cache=TRUE}
+cels = list.files("suppdata/", pattern = "[gz]")
+sapply(paste("suppdata", cels, sep = "/"), gunzip)
+```
+
+We can now proceed as with the Affymetrix workflow.
+ 
+```{r cache=TRUE}
+library(affy)
+raw <- ReadAffy(celfile.path = "suppdata/")
+raw
+boxplot(raw)
+```
+
+## Data in ArrayExpress
+
+The ArrayExpress vignette has various examples of importing data from the ***ArrayExpress*** repository into R. Similar to `getGEO` from `GEOquery`, the `getAE` function can do the import if the accession number is known. If we want just normalised data, we set an argument `type=processed`. 
+
+```{r cache=TRUE}
+library(ArrayExpress)
+mydata <- getAE("E-GEOD-69017",type="processed")
+mydata
+```
+
+Alternatively, we can get the full dataset (including raw cel files) with `type=full`.
+```{r cache=TRUE}
+rawdata <- getAE("E-GEOD-69017",type="full")
+```
+
+We can process the *cel* files using the Affymetrix workflow, or `ArrayExpress` can process them for us.
+
+```{r cache=TRUE}
+procdata <- ae2bioc(rawdata)
 ```
 

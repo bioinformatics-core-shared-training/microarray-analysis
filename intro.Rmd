@@ -1,6 +1,6 @@
 ---
 title: "Technology Overview"
-author: "Mark Dunning"
+author: "Mark Dunning; mark 'dot' dunning 'at' cruk.cam.ac.uk, Oscar Rueda; oscar 'dot' rueda 'at' cruk.cam.ac.uk"
 date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
 output: html_document
 
@@ -98,7 +98,7 @@ et al., 2006](http://www.nature.com/nrg/journal/v7/n1/full/nrg1749.html))
     + Systematic effects may emerge over time
 - Transformation
     + The TIFF images yield values on the scale 0 to 2^16, which is not very convenient for analysis
-    + A suitable transformation, such as log$_2$ is often used
+    + A suitable transformation, such as log$_2$ is often used so a change of 1 unit in this corresponds to a two-fold change.
 - Annotation
     + Microarry manufacturers use their own identifier schemes that don't relate to biology
         + "ILMN_1343291", "ILMN_1343295",...
