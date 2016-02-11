@@ -56,6 +56,18 @@
 <li>Attendees should be comfortable with using the R statistical language to read and manipulate data, and produce simple graphs</li>
 </ul>
 
+<h3>
+<a id="software" class="anchor" href="#software" aria-hidden="true"><span class="octicon octicon-link"></span></a>How to Run the course.</h3>
+We recommend using <a href="www.rstudio.com">RStudio</a> for the practicals along with <a href="https://cran.r-project.org/">R version 3.2.3</a>
+<p>
+Download the materials from this repository and install the required R and Bioconductor packages from within RStudio. This may take several minutes.
+<pre class="input"><code>source("http://www.bioconductor.org/biocLite.R")
+biocLite(c("limma","affy","affyPLM","beadarray","GEOquery","genefilter","illuminaHumanv3.db","cluster",
+           "ggplot2","GOstats","breastCancerVDX","breastCancerTRANSBIG","breastCancerNKI","pamr","survival",
+           "estrogen","ArrayExpress","RColorBrewer","arrayQualityMetrics","hgu95av2cdf","hgu95av2.db","org.Hs.eg.db","wakefield"))
+</code></pre>
+
+
 <h2>
 <a id="day-1" class="anchor" href="#day-1" aria-hidden="true"><span class="octicon octicon-link"></span></a>Day 1</h2>
 <li><a target="_blank" href="https://rawgit.com/bioinformatics-core-shared-training/microarray-analysis/master/intro.html">Introduction to Microarray technologies</a> </li>
