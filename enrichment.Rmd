@@ -34,9 +34,9 @@ Let's imagine that we have a bag full of balls. Each balls represents a gene in 
 In this small example, we can define;
 
 - Total number of balls: 40
-- Total number of interesting (grey) balls: 12
+- Total number of interesting (grey) balls: 10
 
-Now, lets select a number (say, 10) of the balls at random without seeing into the bag and look at what we get
+Now, lets select a number (say, 12) of the balls at random without seeing into the bag and look at what we get
 
 ![picked-balls](images/picked-balls.png)
 
@@ -51,15 +51,34 @@ table(trials)/10000
 cumsum(table(trials)/10000)
 ```
 
-The distribution of balls can be expressed as a contingency table, on which we can use a Fisher's exact test
+Back to our example, the distribution of balls can be expressed as a contingency table, on which we can use a Fisher's exact test
+
+Total grey balls: 10
+Total in subset: 12
 
 ```{r results='asis',echo=FALSE}
 library(knitr)
 df <- data.frame(Selection_in = c(8,4), Selection_out = c(2,26))
 rownames(df) <- c("Grey_in", "Grey_out")
 kable(df)
-
 ```
+
+
+
+```{r results='asis',echo=FALSE}
+df <- data.frame(Selection_in = c("a","c","a+c"), Selection_out = c("b","d","b+d"), RowTotal = c("a +b","c+d","a+b+c+d (=n)"))
+rownames(df) <- c("Grey_in", "Grey_out","Column Total")
+kable(df)
+```
+
+The formula for Fishers exact test is;
+
+$$ p = \frac{\binom{a + b}{a}\binom{c +d}{c}}{\binom{n}{a +c}} = \frac{(a+b)!(c+d)!(a+c)!(b+d)!}{a!b!c!d!n!} $$
+
+or less formally;
+
+*P = (ways of choosing grey balls) X (ways of non-grey balls amongst subset) / ways of choosing subset*
+
 
 **Be careful of how you define the universe**
 
