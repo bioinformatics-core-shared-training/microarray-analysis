@@ -1,0 +1,185 @@
+---
+title: "R recap"
+author: "Your Name Here"
+date: '15th February'
+output: html_document
+---
+
+
+## Getting started
+
+```{r}
+library(wakefield)
+```
+
+```{r}
+random_patients <- function(n) {
+  as.data.frame(r_data_frame(
+    n,
+    id,
+    name,
+    race,
+    sex,
+    smokes,
+    height,
+    birth(random = TRUE, x = NULL, start = Sys.Date() - 365 * 45, k = 365*2,by = "1 days"),
+    state,
+    pet,
+    grade_level(x=1:3),
+    died,    
+    normal(name="Count"),
+    date_stamp)
+  )
+}
+
+```
+
+
+
+```{r}
+patients <- random_patients(10)
+```
+
+```{r}
+View(patients)
+```
+
+
+******
+
+## Q. What are the dimensions of the data frame?
+
+## Q. What columns are available?
+
+*** HINT: see the `dim`, `ncol`, `nrow` and `colnames` functions
+ 
+******
+
+
+```{r }
+```
+
+******
+## Q. Can you think of two ways to access the Names of the patients?
+## Q. What type of object is returned?
+
+******
+```{r}
+```
+
+******
+## Q. Can you identify
+### which columns contain numerical data?
+### which columns contain categorical data?
+### which columns contain logical (`TRUE` or `FALSE`) values?
+    
+******
+
+```{r}
+
+```
+
+
+## Subsetting
+
+
+******
+## Q. Make sure you can understand the behaviour of the following commands
+******
+
+```{r}
+patients[1,2]
+patients[2,1]
+patients[c(1,2,3),1]
+patients[c(1,2,3),c(1,2,3)]
+```
+
+
+******
+## Q. Make sure you can understand the behaviour of the following commands
+******
+
+
+```{r}
+patients[1,]
+patients[,1]
+patients[,c(1,2)]
+```
+
+
+
+******
+## Q. How can we view all information about the first six patients?
+
+*** HINT `head` is commonly-used to give a snapshot of a data frame.
+Otherwise, you can use the `[row,column]` notation.
+
+******
+
+```{r}
+```
+
+******
+## Q. Can you create a data frame of dog owners?
+
+******
+
+
+```{r}
+
+```
+
+
+******
+## Q. Can you create a data frame of deceased patients with a 'count' < 0
+
+******
+
+```{r}
+
+```
+
+## Simple plotting
+
+
+
+```{r}
+hist(patients$Height)
+```
+
+
+```{r}
+plot(patients$Height,patients$Count)
+```
+
+
+```{r}
+barplot(table(patients$Race))
+```
+
+```{r}
+barplot(table(patients$Pet))
+```
+
+
+```{r}
+boxplot(patients$Count ~ patients$Died)
+```
+
+
+```{r}
+plot(patients$Height,patients$Count,pch=16,
+     col="red",xlab="Height",
+     ylab="Count")
+```
+
+
+```{r}
+boxplot(patients$Count ~ patients$Died,col=c("red","yellow"))
+```
+
+```{r}
+png("myLittlePlot.png")
+barplot(table(patients$Pet))
+dev.off()
+```
