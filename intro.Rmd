@@ -89,16 +89,18 @@ The intensities of the features on a microarray are influenced by many sources o
 et al., 2006](http://www.nature.com/nrg/journal/v7/n1/full/nrg1749.html))
 
 - Background correction
-    + Microarray probes are affected by cross hybridisation and other 
+    + A separate step to the correction for chip surface anomalies discussed above
+    + Microarray probes are affected by cross hybridisation and other noise sources. The baseline measurements from the instrument are never zero
     + We address this by measuring 'negative control' probes that we don't expect to yield any signal
     + Affymetrix and Illumina have different ways of doing this
-    
 - Quality assessment
-    + Some arrays might be dodgy or be from poor-quality samples
-    + Systematic effects may emerge over time
+    + Some chips might be dodgy or we may have used poor-quality samples
 - Transformation
     + The TIFF images yield values on the scale 0 to 2^16, which is not very convenient for analysis
     + A suitable transformation, such as log$_2$ is often used so a change of 1 unit in this corresponds to a two-fold change.
+- Normalisation
+    + Systematic effects may emerge over time which we need to calibrate
+    + Experiments should be adequately-designed to cope with this
 - Annotation
     + Microarry manufacturers use their own identifier schemes that don't relate to biology
         + "ILMN_1343291", "ILMN_1343295",...
@@ -129,13 +131,12 @@ The "death" of microarrays was predicted as early as [2008](http://www.nature.co
 There is a vast amount of [Illumina](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GPL10558) and [Affymetrix](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GPL570) data out there waiting to be explored. Some studies often use these historical samples as validation of computational methods of cancer subtypes. e.g.  [here](http://jnci.oxfordjournals.org/content/107/1/dju357.abstract?cited-by=yes;107/1/dju357) or [here](http://www.genomebiology.com/2014/15/8/431)
 
 
-### Many of the same issues apply to NGS data
+### Many of the same issues and techniques apply to NGS data
 
-- Experimental Design
-- Quality assessment
-- Normalisation
-- Statistical testing
-- Clustering classification etc
+- Experimental Design; despite this fancy new technolgy, if we don't design the experiments properly we won't get meaningful conclusions
+- Quality assessment; Yes, NGS experiments can still go wrong!
+- Normalisation; NGS data come with their own set of biases and error that need to be accounted for
+- Stats; testing for RNA-seq is built-upon the knowledge from microarrays
 
 Microarray data are much more manageable in size. We can work with decent-sized experiments (~100s of samples) and learn about high-dimensional analysis techniques that you will encounter in the analysis of newer, sexier, technologies.
 
@@ -157,9 +158,9 @@ The main advantages are;
 
 ![duke-scandal](images/rep-research-nyt.png)
 
-Two Biostatiscians (later termed '*Forensic Bioinformaticians*') from M.D. Anderson used R extensively during their re-analysis and investigation of a Clinical Prognostication paper from Duke. The subsequent [scandal](https://www.youtube.com/watch?v=W5sZTNPMQRM) put Reproducible Research at the forefront of everyone's mind.
+Two Biostatiscians (later termed '*Forensic Bioinformaticians*') from M.D. Anderson used R extensively during their re-analysis and investigation of a Clinical Prognostication paper from Duke. The subsequent [scandal](https://www.youtube.com/watch?v=W5sZTNPMQRM) put Reproducible Research on the map.
 
-Keith Baggerly's [talk](https://www.youtube.com/watch?v=7gYIs7uYbMo) is highy-recommended.
+Keith Baggerly's [talk](https://www.youtube.com/watch?v=7gYIs7uYbMo) from Cambridge in 2010 is highy-recommended.
 
 ## Support for R
 
