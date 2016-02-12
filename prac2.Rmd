@@ -1,0 +1,195 @@
+---
+title: "Affymetrix Workflow"
+author: "Your Name Here"
+date: '15th Feb.'
+output: html_document
+---
+
+## The estrogen dataset
+
+The experiment we will analyse is made-up of eight Affymetrix *HGU95Av2*
+GeneChips. The aim of the experiment is briefly described below (excerpt taken from the
+factDesign package vignette).
+
+> “The investigators in this experiment were interested in the effect of estrogen on the genes in ER+ breast cancer cells over time. After serum starvation of all eight samples, they exposed
+four samples to estrogen, and then measured mRNA transcript abundance after 10 hours for
+two samples and 48 hours for the other two. They left the remaining four samples untreated,
+and measured mRNA transcript abundance at 10 hours for two samples, and 48 hours for
+the other two. Since there are two factors in this experiment (estrogen and time), each at
+two levels (present or absent, 10 hours or 48 hours), this experiment is said to have a 2 × 2
+factorial design.”
+
+```{r}
+library(affy)
+targetsFile <- "estrogen/estrogen.txt"
+pd <- read.AnnotatedDataFrame(targetsFile,header=TRUE,sep="",row.names=1)
+pData(pd)
+```
+
+
+```{r}
+
+raw <-ReadAffy(celfile.path = "estrogen", filenames=rownames(pData(pd)),phenoData = pd)
+raw
+```
+
+******
+## Q  What type of Affy array is this
+## Q How many features?
+## Q How many samples?
+
+******
+
+
+
+
+## Diagnostic plots 
+
+
+
+```{r}
+boxplot(raw,col="red",las=2)
+```
+
+******
+
+##Q What do you notice from this plot?
+
+******
+
+
+## Perfect-Match and Mismatch probes
+
+******
+
+##Q. Generate histograms of the PM and MM intensities from the first array. Do you notice any difference in the signal distribution of the PMs and MMs?
+
+******
+
+
+
+
+```{r}
+par(mfrow=c(2,1))
+hist(log2(pm(raw[,1])),breaks=100,col="steelblue",main="PM",xlim=c(4,14))
+hist(log2(mm(raw[,1])),breaks=100,col="steelblue",main="MM",xlim=c(4,14))
+
+```
+
+
+******
+
+##Q Make a pairs plot of the PM intensities from arrays 1-4 and 5-8 to compare the data from the replicate arrays. Based on all the plots you have generated, what would you conclude about the overall quality of this experiment? 
+## Q Would you use all the data in the downstream differential expression analysis?
+
+******
+
+```{r}
+mva.pairs(pm(raw)[,1:4],plot.method="smoothScatter")
+mva.pairs(pm(raw)[,5:8],plot.method="smoothScatter")
+```
+
+
+## Probe-level Linear Models
+
+
+```{r}
+library(affyPLM)
+plmset <- fitPLM(raw)
+NUSE(plmset,las=2)
+RLE(plmset,las=2)
+```
+
+
+
+
+```{r}
+bad <- ReadAffy(celfile.path = "estrogen/",filenames="bad.cel")
+image(bad)
+```
+
+Try out some images for this dataset
+
+```{r}
+par(mfrow=c(2,4))
+image(raw[,1])
+image(raw[,2])
+image(raw[,3])
+image(raw[,4])
+image(raw[,5])
+image(raw[,6])
+image(raw[,7])
+image(raw[,8])
+```
+
+******
+##Q. Do you see any problems?
+******
+
+
+
+## Running RMA on our dataset
+
+
+```{r}
+eset <- rma(raw)
+eset
+```
+
+
+```{r}
+head(exprs(eset))
+summary(exprs(eset))
+```
+
+
+
+```{r}
+boxplot(exprs(eset),las=2)
+```
+
+
+******
+## Q How can you tell from the boxplot that these data have been normalised?
+******
+
+An MA-plot can be repeated on the normalised data to verify that the normalisation procedure has been sucessful.
+
+```{r}
+mva.pairs(exprs(eset)[,1:4],log.it = FALSE,plot.method="smoothScatter")
+```
+
+
+
+```{r}
+head(pData(eset))
+colnames(exprs(eset))
+rownames(pData(eset))
+```
+
+
+Clustering techniques that we will meet later in the course can also inform decisions about experiment quality by providing a way of visualing relationships between sample groups.
+
+
+## Automated QC
+
+
+```{r eval=FALSE}
+library(arrayQualityMetrics)
+arrayQualityMetrics(eset)
+```
+
+
+## Summary
+
+- Affy data come in `.cel` files that can be imported with the `affy` package
+- QC checks on the raw data include;
+    + check the chip image
+    + probe-level models
+    + boxplots
+- Affy data need to be summarised before further analysis
+    + `rma` (and variants thereof) is most-popular
+- Affy data can be summarised into a common Bioconductor object-type
+    + The "`ExpressionSet`"
+
+
