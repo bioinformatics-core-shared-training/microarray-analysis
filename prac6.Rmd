@@ -1,0 +1,239 @@
+---
+title: "Ontologies and Enrichment"
+author: "Mark Dunning; mark.dunning@cruk.cam.ac.uk, Oscar Rueda; oscar.rueda@cruk.cam.ac.uk"
+date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
+output: html_document
+---
+```{r echo=FALSE,message=FALSE}
+library(GEOquery)
+library(limma)
+```
+
+## Gene-Ontology Analysis
+
+## Preparing the data for an over-representation test
+
+
+```{r }
+library(GEOquery)
+library(genefilter)
+url <- "ftp://ftp.ncbi.nih.gov/pub/geo/DATA/SeriesMatrix/GSE33126/GSE33126_series_matrix.txt.gz"
+filenm <- "data/GSE33126_series_matrix.txt.gz"
+if(!file.exists("data/GSE33126_series_matrix.txt.gz")) download.file(url, destfile=filenm)
+colonData <- getGEO(filename=filenm)
+colonData
+```
+
+
+```{r}
+exprs(colonData) <- log2(exprs(colonData))
+```
+
+
+
+```{r}
+anno <- fData(colonData)
+anno <- anno[,c("Symbol","Entrez_Gene_ID","Chromosome","Cytoband")]
+hasEntrez <- which(anno$Entrez_Gene_ID != "")
+colonData.filt <- colonData[hasEntrez,]
+```
+
+
+```{r}
+testStat <- apply(exprs(colonData.filt),1, IQR,na.rm=TRUE)
+length(testStat)
+```
+
+
+```{r}
+lls <- fData(colonData.filt)$Entrez_Gene_ID
+tSsp = split.default(testStat, lls)
+tSsp[[1]]
+anno[names(tSsp[[1]]),]
+```
+
+
+
+```{r}
+which.max(tSsp[[1]])
+names(which.max(tSsp[[1]]))
+selectedID <- sapply(tSsp, function(x) names(which.max(x)))
+selectedID[1]
+```
+
+
+```{r}
+colonData.filt <- colonData.filt[unlist(selectedID),]
+length(unique(fData(colonData.filt)$Entrez_Gene_ID))
+any(duplicated(fData(colonData.filt)$Entrez_Gene_ID))
+```
+
+
+
+```{r}
+entrezIQR = apply(exprs(colonData.filt), 1 , IQR)
+hist(entrezIQR, xlim=c(0,2),breaks=100)
+colonData.filt <- colonData.filt[entrezIQR > 0.25,]
+```
+
+
+
+```{r}
+anno.final <- fData(colonData.filt)
+universeIds <- anno.final$Entrez_Gene_ID
+length(universeIds)
+write.table(universeIds, file="geneUniverse.txt",sep="\t",row.names = FALSE,quote=FALSE)
+```
+
+
+```{r}
+library(genefilter)
+SampleGroup <- pData(colonData)$source_name_ch1
+Patient <- pData(colonData)$characteristics_ch1.1
+
+ttests <- rowttests(colonData.filt, fac=SampleGroup)
+cutoff <- 0.01
+
+selected <- ttests$p.value < cutoff
+selectedEntrezIds <- fData(colonData.filt)$Entrez_Gene_ID[selected]
+length(selectedEntrezIds)
+```
+
+
+## Using online tools
+
+
+
+```{r}
+write.table(selectedEntrezIds, file="myEntrezGene.txt",sep="\t",quote=FALSE,row.names = FALSE)
+```
+
+
+## Over-representation analysis in Bioconductor: GOstats
+
+
+
+```{r}
+library(GOstats)
+params = new ("GOHyperGParams" , geneIds = selectedEntrezIds , 
+              universeGeneIds = universeIds , annotation = "illuminaHumanv3" ,
+              ontology =  "BP" , pvalueCutoff = 0.05 , conditional = FALSE ,
+              testDirection = "over")
+hgOver = hyperGTest(params)
+hgOver
+```
+
+
+```{r}
+summary (hgOver)[1:20 , ]
+```
+
+
+```{r}
+keggParams = new ("KEGGHyperGParams" , geneIds = selectedEntrezIds ,
+  universeGeneIds = universeIds , annotation = "illuminaHumanv3" ,
+  pvalueCutoff = 0.05 , testDirection = "over" )
+
+keggHgOver = hyperGTest (keggParams)
+
+summary (keggHgOver)
+
+chrParams = new ("ChrMapHyperGParams" , geneIds = selectedEntrezIds ,
+universeGeneIds = universeIds , annotation = "illuminaHumanv3" ,
+pvalueCutoff = 0.05 , testDirection = "over" , conditional = TRUE )
+
+chrHgOver = hyperGTest (chrParams)
+summary (chrHgOver)
+```
+
+
+
+## A Threshold-free test in Bioconductor
+
+
+```{r}
+library (limma)
+
+randGenes <- sample(1:nrow(ttests),50)
+
+geneSetTest (index = randGenes , statistics = ttests$statistic)
+
+geneSetTest (index = randGenes , statistics = ttests$statistic ,
+  alternative = "down" )
+
+geneSetTest (index = randGenes , statistics = ttests$statistic ,
+  alternative = "up" )
+
+barcodeplot (statistics = as.numeric(ttests$statistic) , index = randGenes )
+
+```
+
+
+
+```{r}
+
+myGenes <- which(ttests$p.value < 0.01)[1:50]
+
+geneSetTest (index = myGenes , statistics = ttests$statistic)
+
+geneSetTest (index = myGenes , statistics = ttests$statistic ,
+  alternative = "down" )
+
+geneSetTest (index = myGenes , statistics = ttests$statistic ,
+  alternative = "up" )
+
+barcodeplot (statistics = as.numeric(ttests$statistic) , index = myGenes )
+
+```
+
+
+```{r}
+mylist <- c("LOC441066","ARF3","FMNL3","CSF1R","XLKD1","TTRAP","DMWD","SYNPO2L","PILRB","LAMP3")
+myGenes <- which(anno.final$Symbol %in% mylist)
+geneSetTest (index = myGenes , statistics = ttests$statistic)
+
+geneSetTest (index = myGenes , statistics = ttests$statistic ,
+  alternative = "down" )
+
+geneSetTest (index = myGenes , statistics = ttests$statistic ,
+  alternative = "up" )
+
+barcodeplot (statistics = as.numeric(ttests$statistic) , index = myGenes )
+```
+
+## Converting between different identifiers
+
+
+```{r}
+library(org.Hs.eg.db)
+columns(org.Hs.eg.db)
+keytypes(org.Hs.eg.db)
+```
+
+
+```{r}
+select(org.Hs.eg.db, keys=c("TP53","BRCA1","PTEN"), keytype = "SYMBOL",columns = "ENTREZID")
+```
+
+
+```{r}
+select(org.Hs.eg.db, keys=c("TP53","BRCA1","PTEN"), keytype = "SYMBOL",columns = c("ENTREZID","ENSEMBL","UNIPROT"))
+```
+
+
+```{r}
+select(org.Hs.eg.db, keys="04110", keytype = "PATH",columns=c("SYMBOL","ENTREZID"))
+```
+
+
+```{r}
+goQuery <- select(org.Hs.eg.db, keys="GO:0016072", keytype = "GOALL",columns=c("SYMBOL","ENTREZID"))
+head(goQuery)
+```
+
+
+```{r}
+myGenes <- which(anno.final$Entrez %in% goQuery$ENTREZ)
+geneSetTest (index = myGenes , statistics = ttests$statistic)
+```
+
