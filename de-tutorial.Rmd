@@ -48,12 +48,11 @@ Inspect the clinical variables
 ##Q How many do we have in each group?
 
 ******
-```{r}
+```{r echo=FALSE}
 pData(gse)[1:5,1:8]
 pd <- pData(gse)
 View(pd)
 SampleGroup <- pd$source_name_ch1
-table(SampleGroup)
 ```
 
 # Simple t-tests

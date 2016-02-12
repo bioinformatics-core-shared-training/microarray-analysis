@@ -63,7 +63,7 @@ img {
 <div id="header">
 <h1 class="title">Differential Expression Tutorial</h1>
 <h4 class="author"><em>Mark Dunning; mark ‘dot’ dunning ‘at’ cruk.cam.ac.uk, Oscar Rueda; oscar ‘dot’ rueda ‘at’ cruk.cam.ac.uk</em></h4>
-<h4 class="date"><em>Last modified: 11 Feb 2016</em></h4>
+<h4 class="date"><em>Last modified: 12 Feb 2016</em></h4>
 </div>
 
 
@@ -139,7 +139,6 @@ boxplot(exprs(gse),outline=FALSE)</code></pre>
 <div id="q-how-many-do-we-have-in-each-group" class="section level2">
 <h2>Q How many do we have in each group?</h2>
 <hr />
-<pre class="r"><code>pData(gse)[1:5,1:8]</code></pre>
 <pre><code>##                               title geo_accession                status
 ## GSM820516 C1 (gene expression data)     GSM820516 Public on Nov 26 2012
 ## GSM820517 C2 (gene expression data)     GSM820517 Public on Nov 26 2012
@@ -158,13 +157,6 @@ boxplot(exprs(gse),outline=FALSE)</code></pre>
 ## GSM820518           tumor
 ## GSM820519          normal
 ## GSM820520           tumor</code></pre>
-<pre class="r"><code>pd &lt;- pData(gse)
-View(pd)
-SampleGroup &lt;- pd$source_name_ch1
-table(SampleGroup)</code></pre>
-<pre><code>## SampleGroup
-## normal  tumor 
-##      9      9</code></pre>
 </div>
 </div>
 <div id="simple-t-tests" class="section level1">

@@ -86,7 +86,8 @@ the clustering output. e.g. the ’ward’ method tends to produce smaller, comp
 popular way of displaying the results of clustering is a dendrogram, which arranges the sam-
 ples on the x-axis and shows the distances between samples on the y-axis. It is important to
 note that the distance of samples on the x-axis has no meaning. The fact that two samples
-are displayed next to each other, does not m
+are displayed next to each other, does not mean that they are "closest". One has to
+use the y-axis to determine their distance
 
 
 ```{r}
