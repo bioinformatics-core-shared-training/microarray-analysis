@@ -57,33 +57,6 @@ arrayQualityMetrics(mydata, force=TRUE)
 ```
 
 
-```{r}
-a <- matrix(rnorm(100),ncol=10)
-colnames(a) <- LETTERS[1:10]
-a[,1]
-a[,-1]
-```
-
-
-```{r}
-a[,c(1,10)]
-a[,-c(1,10)]
-```
-
-
-
-```{r}
-subset <- mydata[,1:4]
-dim(exprs(subset))
-dim(pData(subset))
-```
-
-
-```{r}
-subset <- mydata[,-c(1,4)]
-subset
-```
-
 
 
 ******
