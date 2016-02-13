@@ -45,7 +45,7 @@ With this identifier, we can use the GEOquery Bioconductor package
 library(GEOquery)
 ```
 
-## Example 1. General procedure
+## Example. General procedure
 
 Lets say we have identified a dataset which has leukemia patients. The web page describing these data is [here](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE1729). The main function we need to use is `getGEO`. This downloads the *series* file for the dataset and parses the data in this file into a format that is compatible with Bioconductor. 
 
@@ -95,7 +95,7 @@ fData(mydata)[1,1:8]
 
 
 
-## Example 1.1 Quality assessment of the downloaded data
+## Example. Quality assessment of the downloaded data
 
 As we have downloaded the processed and normalised data, there are limited options in terms of quality assessment. Without the *.cel* files we cannot examine the raw images or fit PLMs. The simplest form of QA is the boxplot.
 
@@ -172,7 +172,7 @@ subset <- mydata[1:100,]
 
 In the next section we will look into the annotation of the dataset in more detail
 
-## Example 1.2 - Dealing with gene annotation
+## Example. Dealing with gene annotation
 
 The annotation for the features can be retrieved by using `fData`. Because of the strict submission process, all the rows of this feature matrix are in the same order as the expression matrix; which greatly-simplifies further analysis
 
@@ -282,7 +282,7 @@ IQR(E[10723,])
 
 
 
-## Example 2. Dealing with large cohorts
+## Example. Dealing with large cohorts
 
 For this second example, we will import a patient cohort
 ```{r}
