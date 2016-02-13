@@ -200,11 +200,8 @@ colnames(features)
 
 ## Exercise
 
-- How many unique Entrez gene IDs are there?
-- How many features do not have an associated Entrez ID
-- Which Entrez ID has the most probes?
-- What probes are used for the gene *TP53*
-
+- How many unique Entrez gene IDs are there? HINT: there is a function called `unique`....
+- How many features do not have an associated Entrez ID? HINT: how is a probe without an Entrez ID represented in the vector?
 ******
 
 
