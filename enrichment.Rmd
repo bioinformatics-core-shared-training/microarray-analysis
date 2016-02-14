@@ -1,6 +1,6 @@
 ---
 title: "Ontologies and Enrichment"
-author: "Mark Dunning; mark.dunning@cruk.cam.ac.uk, Oscar Rueda; oscar.rueda@cruk.cam.ac.uk"
+author: "Mark Dunning; mark 'dot' dunning 'at' cruk.cam.ac.uk, Oscar Rueda; oscar 'dot' rueda 'at' cruk.cam.ac.uk"
 date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
 output: html_document
 ---
@@ -41,10 +41,10 @@ Now, lets select a number (say, 12) of the balls at random without seeing into t
 ![picked-balls](images/picked-balls.png)
 
 
-We have picked, at random, 8 grey balls. Using simulations, we can repeat the process and look at how many grey we get. We can (of course!) do this in R 
+We have picked, at random, 8 grey balls. Using simulations, we can repeat the process and look at how many grey we get. We can (of course!) do this in R. In base R there is a family of functions that can generate random draws from various distributions; `rnorm`, `rbinom`, `rhyper` etc....
 
 ```{r}
-trials <- rhyper(10000,30,10,10)
+trials <- rhyper(10000,40,10,12)
 hist(trials)
 table(trials)
 table(trials)/10000
