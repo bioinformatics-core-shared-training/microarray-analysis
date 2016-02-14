@@ -1,6 +1,6 @@
 ---
 title: "Importing publicly available data"
-author: "Mark Dunning; mark.dunning@cruk.cam.ac.uk"
+author: "Mark Dunning; mark 'dot' dunning 'at' cruk.cam.ac.uk, Oscar Rueda; oscar 'dot' rueda 'at' cruk.cam.ac.uk"
 date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
 output: html_document
 ---
@@ -27,9 +27,18 @@ Several breast cancer datasets have been curated for use with the genefu package
 - [breastCancerNKI](http://bioconductor.org/packages/release/data/experiment/html/breastCancerNKI.html)
 - [breastCancerVDX](http://bioconductor.org/packages/release/data/experiment/html/breastCancerVDX.html)
 
+```{r eval=FALSE}
+source("http://www.bioconductor.org/biocLite.R")
+biocLite("breastCancerNKI")
+biocLite("breastCancerVDX")
+```
+
+
 also
 
-- curatedBreastData
+- [curatedBreastData](http://bioconductor.org/packages/release/data/experiment/html/curatedBreastData.html)
+- [curatedBladderData](http://bioconductor.org/packages/release/data/experiment/html/curatedBladderData.html)
+- [curatedOvarianData](http://bioconductor.org/packages/release/data/experiment/html/curatedOvarianData.html)
 
 ******
 

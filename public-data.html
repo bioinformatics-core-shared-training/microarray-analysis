@@ -8,7 +8,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
 
-<meta name="author" content="Mark Dunning; mark.dunning@cruk.cam.ac.uk" />
+<meta name="author" content="Mark Dunning; mark dot dunning at cruk.cam.ac.uk, Oscar Rueda; oscar dot rueda at cruk.cam.ac.uk" />
 
 
 <title>Importing publicly available data</title>
@@ -62,8 +62,8 @@ img {
 
 <div id="header">
 <h1 class="title">Importing publicly available data</h1>
-<h4 class="author"><em>Mark Dunning; <a href="mailto:mark.dunning@cruk.cam.ac.uk">mark.dunning@cruk.cam.ac.uk</a></em></h4>
-<h4 class="date"><em>Last modified: 13 Feb 2016</em></h4>
+<h4 class="author"><em>Mark Dunning; mark ‘dot’ dunning ‘at’ cruk.cam.ac.uk, Oscar Rueda; oscar ‘dot’ rueda ‘at’ cruk.cam.ac.uk</em></h4>
+<h4 class="date"><em>Last modified: 14 Feb 2016</em></h4>
 </div>
 
 
@@ -85,9 +85,14 @@ img {
 <li><a href="http://bioconductor.org/packages/release/data/experiment/html/breastCancerNKI.html">breastCancerNKI</a></li>
 <li><a href="http://bioconductor.org/packages/release/data/experiment/html/breastCancerVDX.html">breastCancerVDX</a></li>
 </ul>
+<pre class="r"><code>source(&quot;http://www.bioconductor.org/biocLite.R&quot;)
+biocLite(&quot;breastCancerNKI&quot;)
+biocLite(&quot;breastCancerVDX&quot;)</code></pre>
 <p>also</p>
 <ul>
-<li>curatedBreastData</li>
+<li><a href="http://bioconductor.org/packages/release/data/experiment/html/curatedBreastData.html">curatedBreastData</a></li>
+<li><a href="http://bioconductor.org/packages/release/data/experiment/html/curatedBladderData.html">curatedBladderData</a></li>
+<li><a href="http://bioconductor.org/packages/release/data/experiment/html/curatedOvarianData.html">curatedOvarianData</a></li>
 </ul>
 <hr />
 </div>
@@ -114,7 +119,7 @@ destfile &lt;- &quot;data/GSE1729_series_matrix.txt.gz&quot;
 if(!file.exists(destfile)) download.file(remotefile, destfile)
 mydata &lt;- getGEO(filename=&quot;data/GSE1729_series_matrix.txt.gz&quot;)</code></pre>
 <pre><code>## File stored at: 
-## /var/folders/b8/q7k4zz6d3x5bxrgwmst1vmmhdbgdr4/T//Rtmpyidiek/GPL96.soft</code></pre>
+## /var/folders/b8/q7k4zz6d3x5bxrgwmst1vmmhdbgdr4/T//RtmpZkhjDc/GPL96.soft</code></pre>
 <pre class="r"><code>mydata</code></pre>
 <pre><code>## ExpressionSet (storageMode: lockedEnvironment)
 ## assayData: 22283 features, 43 samples 
@@ -202,67 +207,67 @@ arrayQualityMetrics(mydata, force=TRUE)</code></pre>
 <pre class="r"><code>a &lt;- matrix(rnorm(100),ncol=10)
 colnames(a) &lt;- LETTERS[1:10]
 a[,1]</code></pre>
-<pre><code>##  [1]  1.02055858  0.82263665  0.63263551 -1.68709715  0.36026838
-##  [6] -1.33610297 -0.09018172  1.16068067  0.85167289  0.14662616</code></pre>
+<pre><code>##  [1] -1.5189953  0.3584195 -0.7744410  1.3356705  0.9389140 -1.5673945
+##  [7]  0.3485802  1.9000448  0.1720101 -0.1494207</code></pre>
 <pre class="r"><code>a[,-1]</code></pre>
-<pre><code>##                B          C            D          E          F          G
-##  [1,] -0.3582341  1.9892166 -0.032440378 -1.9999254  1.7535537  0.9835530
-##  [2,] -0.8942857  1.0267854 -0.954575297 -1.5106790 -0.2862395 -1.3067169
-##  [3,]  0.8561038 -1.1920827 -1.373425477 -0.2792880  1.9531190 -0.1558395
-##  [4,] -0.4574033 -1.3764432 -1.124719256 -1.4705962 -0.3299897 -1.5956665
-##  [5,]  1.7320651  1.1260273 -0.007526178 -0.3915093 -0.1015239  0.9461954
-##  [6,] -3.0086051 -2.0801488 -0.944849478  2.0161576  1.9751963  1.1717364
-##  [7,]  0.6823616 -1.3141214  0.455999104  1.4444027  0.7988011  0.7906308
-##  [8,] -2.5263305  0.6030923  0.331119394  2.2612255 -0.4607119  1.4170067
-##  [9,]  0.9558728 -0.6649878 -0.076794742  0.1141135  2.0571128  2.1119581
-## [10,] -0.7166317 -0.2081242  0.005820571 -1.9365151 -0.9482386  0.4332146
-##                H           I           J
-##  [1,] -1.1755945 -1.02982171  0.57495614
-##  [2,]  0.7474522  0.09606907 -0.38846722
-##  [3,] -0.6283298 -0.44523029  0.06521936
-##  [4,]  0.2700017  1.78590428 -0.21487258
-##  [5,]  0.1397904  0.18316123  0.58355175
-##  [6,] -1.5165120  0.13230110  0.40147282
-##  [7,] -0.0292316 -0.39464156 -0.69627962
-##  [8,] -1.8329508 -0.27234960 -0.34080493
-##  [9,] -1.1243638  1.86167241  1.17477029
-## [10,] -0.4661590 -1.56639480  0.03563385</code></pre>
+<pre><code>##                 B          C           D           E          F
+##  [1,]  0.09209687 -0.9450521 -0.54898344  0.95450804  0.1348013
+##  [2,]  1.07379456 -1.4947641 -0.23176477  0.49207319 -0.4615613
+##  [3,] -0.62187103 -0.6802949  0.66454501 -0.92035985  1.1930635
+##  [4,]  0.03406120 -0.4728990 -0.09736152 -0.11111513 -0.4390230
+##  [5,] -0.75330506  0.1087952 -0.41619025  0.04675134  2.0533174
+##  [6,]  2.12959436  0.9924733  0.23844057 -0.53182745 -0.7115075
+##  [7,]  1.07027137  1.2974078  0.58609973 -1.61658088 -1.1984138
+##  [8,]  1.02323389 -0.1714760  1.28811749  0.73795112 -0.5526200
+##  [9,] -0.66956038  1.3420854  0.36283210  0.52085653  0.9728858
+## [10,]  2.05279710  0.1083092 -0.62635820  0.55818257  0.7077582
+##                 G          H          I          J
+##  [1,]  1.60887872 -0.8120257 -0.1408406  1.1091033
+##  [2,]  0.01784353 -1.5496241  0.3706185  0.5093582
+##  [3,]  0.68616713 -1.0739613  0.7198489 -0.4059869
+##  [4,] -0.78248181 -1.8551048  0.2271309 -0.6495296
+##  [5,] -0.14320712 -1.6711934  0.6582905  1.0174476
+##  [6,]  0.54038933 -1.0907873 -0.8990274 -0.6118023
+##  [7,]  0.44393467  0.6758575 -0.5586434  1.8964696
+##  [8,]  0.27927406  0.2200853 -0.1337276 -2.0531659
+##  [9,] -0.39328230  1.9153863 -1.3334805 -0.5410945
+## [10,]  0.23911269 -1.0006950 -2.0410785 -0.5074739</code></pre>
 <p>The same technique applies to vectors with more than one element</p>
 <pre class="r"><code>a[,c(1,10)]</code></pre>
-<pre><code>##                 A           J
-##  [1,]  1.02055858  0.57495614
-##  [2,]  0.82263665 -0.38846722
-##  [3,]  0.63263551  0.06521936
-##  [4,] -1.68709715 -0.21487258
-##  [5,]  0.36026838  0.58355175
-##  [6,] -1.33610297  0.40147282
-##  [7,] -0.09018172 -0.69627962
-##  [8,]  1.16068067 -0.34080493
-##  [9,]  0.85167289  1.17477029
-## [10,]  0.14662616  0.03563385</code></pre>
+<pre><code>##                A          J
+##  [1,] -1.5189953  1.1091033
+##  [2,]  0.3584195  0.5093582
+##  [3,] -0.7744410 -0.4059869
+##  [4,]  1.3356705 -0.6495296
+##  [5,]  0.9389140  1.0174476
+##  [6,] -1.5673945 -0.6118023
+##  [7,]  0.3485802  1.8964696
+##  [8,]  1.9000448 -2.0531659
+##  [9,]  0.1720101 -0.5410945
+## [10,] -0.1494207 -0.5074739</code></pre>
 <pre class="r"><code>a[,-c(1,10)]</code></pre>
-<pre><code>##                B          C            D          E          F          G
-##  [1,] -0.3582341  1.9892166 -0.032440378 -1.9999254  1.7535537  0.9835530
-##  [2,] -0.8942857  1.0267854 -0.954575297 -1.5106790 -0.2862395 -1.3067169
-##  [3,]  0.8561038 -1.1920827 -1.373425477 -0.2792880  1.9531190 -0.1558395
-##  [4,] -0.4574033 -1.3764432 -1.124719256 -1.4705962 -0.3299897 -1.5956665
-##  [5,]  1.7320651  1.1260273 -0.007526178 -0.3915093 -0.1015239  0.9461954
-##  [6,] -3.0086051 -2.0801488 -0.944849478  2.0161576  1.9751963  1.1717364
-##  [7,]  0.6823616 -1.3141214  0.455999104  1.4444027  0.7988011  0.7906308
-##  [8,] -2.5263305  0.6030923  0.331119394  2.2612255 -0.4607119  1.4170067
-##  [9,]  0.9558728 -0.6649878 -0.076794742  0.1141135  2.0571128  2.1119581
-## [10,] -0.7166317 -0.2081242  0.005820571 -1.9365151 -0.9482386  0.4332146
-##                H           I
-##  [1,] -1.1755945 -1.02982171
-##  [2,]  0.7474522  0.09606907
-##  [3,] -0.6283298 -0.44523029
-##  [4,]  0.2700017  1.78590428
-##  [5,]  0.1397904  0.18316123
-##  [6,] -1.5165120  0.13230110
-##  [7,] -0.0292316 -0.39464156
-##  [8,] -1.8329508 -0.27234960
-##  [9,] -1.1243638  1.86167241
-## [10,] -0.4661590 -1.56639480</code></pre>
+<pre><code>##                 B          C           D           E          F
+##  [1,]  0.09209687 -0.9450521 -0.54898344  0.95450804  0.1348013
+##  [2,]  1.07379456 -1.4947641 -0.23176477  0.49207319 -0.4615613
+##  [3,] -0.62187103 -0.6802949  0.66454501 -0.92035985  1.1930635
+##  [4,]  0.03406120 -0.4728990 -0.09736152 -0.11111513 -0.4390230
+##  [5,] -0.75330506  0.1087952 -0.41619025  0.04675134  2.0533174
+##  [6,]  2.12959436  0.9924733  0.23844057 -0.53182745 -0.7115075
+##  [7,]  1.07027137  1.2974078  0.58609973 -1.61658088 -1.1984138
+##  [8,]  1.02323389 -0.1714760  1.28811749  0.73795112 -0.5526200
+##  [9,] -0.66956038  1.3420854  0.36283210  0.52085653  0.9728858
+## [10,]  2.05279710  0.1083092 -0.62635820  0.55818257  0.7077582
+##                 G          H          I
+##  [1,]  1.60887872 -0.8120257 -0.1408406
+##  [2,]  0.01784353 -1.5496241  0.3706185
+##  [3,]  0.68616713 -1.0739613  0.7198489
+##  [4,] -0.78248181 -1.8551048  0.2271309
+##  [5,] -0.14320712 -1.6711934  0.6582905
+##  [6,]  0.54038933 -1.0907873 -0.8990274
+##  [7,]  0.44393467  0.6758575 -0.5586434
+##  [8,]  0.27927406  0.2200853 -0.1337276
+##  [9,] -0.39328230  1.9153863 -1.3334805
+## [10,]  0.23911269 -1.0006950 -2.0410785</code></pre>
 <p>The <code>ExpressionSet</code> object has been design to respect these same subsetting rules, even though it is an inherently more-complicated object.</p>
 <p>In the following we create a new object that represents the first four <em>samples</em> in the object. This is especially neat, as it creates a subset of the expression matrix and phenotypic data in the same operation. At the same time, the number of genes is not affected.</p>
 <pre class="r"><code>subset &lt;- mydata[,1:4]
@@ -409,7 +414,7 @@ destfile &lt;- &quot;data/GSE18088_series_matrix.txt.gz&quot;
 if(!file.exists(destfile)) download.file(remotefile, destfile)
 cohort &lt;- getGEO(filename=&quot;data/GSE18088_series_matrix.txt.gz&quot;)</code></pre>
 <pre><code>## File stored at: 
-## /var/folders/b8/q7k4zz6d3x5bxrgwmst1vmmhdbgdr4/T//RtmpTJ2bGN/GPL570.soft</code></pre>
+## /var/folders/b8/q7k4zz6d3x5bxrgwmst1vmmhdbgdr4/T//Rtmp5x4yEP/GPL570.soft</code></pre>
 <pre class="r"><code>cohort</code></pre>
 <pre><code>## ExpressionSet (storageMode: lockedEnvironment)
 ## assayData: 54675 features, 53 samples 
@@ -598,14 +603,14 @@ sex</code></pre>
 ## /Users/dunnin01/work/git/microarray-analysis/GSE20986/GSE20986_RAW.tar  664
 ## /Users/dunnin01/work/git/microarray-analysis/GSE20986/filelist.txt      664
 ##                                                                                      mtime
-## /Users/dunnin01/work/git/microarray-analysis/GSE20986/GSE20986_RAW.tar 2016-02-13 15:22:38
-## /Users/dunnin01/work/git/microarray-analysis/GSE20986/filelist.txt     2016-02-13 15:22:39
+## /Users/dunnin01/work/git/microarray-analysis/GSE20986/GSE20986_RAW.tar 2016-02-14 11:07:22
+## /Users/dunnin01/work/git/microarray-analysis/GSE20986/filelist.txt     2016-02-14 11:07:26
 ##                                                                                      ctime
-## /Users/dunnin01/work/git/microarray-analysis/GSE20986/GSE20986_RAW.tar 2016-02-13 15:22:38
-## /Users/dunnin01/work/git/microarray-analysis/GSE20986/filelist.txt     2016-02-13 15:22:39
+## /Users/dunnin01/work/git/microarray-analysis/GSE20986/GSE20986_RAW.tar 2016-02-14 11:07:22
+## /Users/dunnin01/work/git/microarray-analysis/GSE20986/filelist.txt     2016-02-14 11:07:26
 ##                                                                                      atime
-## /Users/dunnin01/work/git/microarray-analysis/GSE20986/GSE20986_RAW.tar 2016-02-13 15:22:38
-## /Users/dunnin01/work/git/microarray-analysis/GSE20986/filelist.txt     2016-02-13 15:22:39
+## /Users/dunnin01/work/git/microarray-analysis/GSE20986/GSE20986_RAW.tar 2016-02-14 11:07:25
+## /Users/dunnin01/work/git/microarray-analysis/GSE20986/filelist.txt     2016-02-14 11:07:26
 ##                                                                              uid
 ## /Users/dunnin01/work/git/microarray-analysis/GSE20986/GSE20986_RAW.tar 448247556
 ## /Users/dunnin01/work/git/microarray-analysis/GSE20986/filelist.txt     448247556
@@ -621,10 +626,14 @@ sex</code></pre>
 <p>The supplementary file comes as a <em>tar</em> archive, which we need to extract to get the individual cel files.</p>
 <pre class="r"><code>untar(&quot;GSE20986/GSE20986_RAW.tar&quot;, exdir = &quot;suppdata&quot;)
 list.files(&quot;suppdata/&quot;)</code></pre>
-<pre><code>##  [1] &quot;GSM524662.CEL.gz&quot; &quot;GSM524663.CEL.gz&quot; &quot;GSM524664.CEL.gz&quot;
-##  [4] &quot;GSM524665.CEL.gz&quot; &quot;GSM524666.CEL.gz&quot; &quot;GSM524667.CEL.gz&quot;
-##  [7] &quot;GSM524668.CEL.gz&quot; &quot;GSM524669.CEL.gz&quot; &quot;GSM524670.CEL.gz&quot;
-## [10] &quot;GSM524671.CEL.gz&quot; &quot;GSM524672.CEL.gz&quot; &quot;GSM524673.CEL.gz&quot;</code></pre>
+<pre><code>##  [1] &quot;GSM524662.CEL&quot;    &quot;GSM524662.CEL.gz&quot; &quot;GSM524663.CEL&quot;   
+##  [4] &quot;GSM524663.CEL.gz&quot; &quot;GSM524664.CEL&quot;    &quot;GSM524664.CEL.gz&quot;
+##  [7] &quot;GSM524665.CEL&quot;    &quot;GSM524665.CEL.gz&quot; &quot;GSM524666.CEL&quot;   
+## [10] &quot;GSM524666.CEL.gz&quot; &quot;GSM524667.CEL&quot;    &quot;GSM524667.CEL.gz&quot;
+## [13] &quot;GSM524668.CEL&quot;    &quot;GSM524668.CEL.gz&quot; &quot;GSM524669.CEL&quot;   
+## [16] &quot;GSM524669.CEL.gz&quot; &quot;GSM524670.CEL&quot;    &quot;GSM524670.CEL.gz&quot;
+## [19] &quot;GSM524671.CEL&quot;    &quot;GSM524671.CEL.gz&quot; &quot;GSM524672.CEL&quot;   
+## [22] &quot;GSM524672.CEL.gz&quot; &quot;GSM524673.CEL&quot;    &quot;GSM524673.CEL.gz&quot;</code></pre>
 <p>Each cel file is zipped, so we unzip with <em>gunzip</em>.</p>
 <pre class="r"><code>cels = list.files(&quot;suppdata/&quot;, pattern = &quot;[gz]&quot;)
 sapply(paste(&quot;suppdata&quot;, cels, sep = &quot;/&quot;), gunzip)</code></pre>
@@ -644,11 +653,6 @@ sapply(paste(&quot;suppdata&quot;, cels, sep = &quot;/&quot;), gunzip)</code></p
 <pre class="r"><code>library(affy)
 raw &lt;- ReadAffy(celfile.path = &quot;suppdata/&quot;)
 raw</code></pre>
-<pre><code>## installing the source package 'hgu133plus2cdf'</code></pre>
-<pre><code>## 
-## The downloaded source packages are in
-##  '/private/var/folders/b8/q7k4zz6d3x5bxrgwmst1vmmhdbgdr4/T/RtmphYqQ7W/downloaded_packages'</code></pre>
-<pre><code>## </code></pre>
 <pre><code>## AffyBatch object
 ## size of arrays=1164x1164 features (20 kb)
 ## cdf=HG-U133_Plus_2 (54675 affyids)
