@@ -102,7 +102,7 @@ biocLite(&quot;breastCancerVDX&quot;)</code></pre>
 <div id="using-the-geoquery-package" class="section level2">
 <h2>Using the GEOquery package</h2>
 <p>Can search from GEO <a href="http://www.ncbi.nlm.nih.gov/geo/">home page</a> or using this <a href="https://zhiji.shinyapps.io/GEOsearch">Shiny app</a> to get a dataset ID which will be of the form <strong>GSE….</strong>.</p>
-<p>With this identifier, we can use the GEOquery Bioconductor package</p>
+<p>With this identifier, we can use the <a href="http://bioinformatics.oxfordjournals.org/content/23/14/1846.long">GEOquery</a> Bioconductor package</p>
 <pre class="r"><code>library(GEOquery)</code></pre>
 </div>
 <div id="example.-general-procedure" class="section level2">
@@ -414,7 +414,7 @@ destfile &lt;- &quot;data/GSE18088_series_matrix.txt.gz&quot;
 if(!file.exists(destfile)) download.file(remotefile, destfile)
 cohort &lt;- getGEO(filename=&quot;data/GSE18088_series_matrix.txt.gz&quot;)</code></pre>
 <pre><code>## File stored at: 
-## /var/folders/b8/q7k4zz6d3x5bxrgwmst1vmmhdbgdr4/T//Rtmp5x4yEP/GPL570.soft</code></pre>
+## /var/folders/b8/q7k4zz6d3x5bxrgwmst1vmmhdbgdr4/T//RtmpoNpx4n/GPL570.soft</code></pre>
 <pre class="r"><code>cohort</code></pre>
 <pre><code>## ExpressionSet (storageMode: lockedEnvironment)
 ## assayData: 54675 features, 53 samples 

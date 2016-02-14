@@ -48,7 +48,7 @@ also
 
 Can search from GEO [home page](http://www.ncbi.nlm.nih.gov/geo/) or using this [Shiny app](https://zhiji.shinyapps.io/GEOsearch) to get a dataset ID which will be of the form **GSE....**.
 
-With this identifier, we can use the GEOquery Bioconductor package
+With this identifier, we can use the [GEOquery](http://bioinformatics.oxfordjournals.org/content/23/14/1846.long) Bioconductor package
 
 ```{r message=FALSE}
 library(GEOquery)
