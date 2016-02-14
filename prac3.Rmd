@@ -95,12 +95,10 @@ colnames(features)
 
 ## Exercise
 
-- How many unique Entrez gene IDs are there?
-- How many features do not have an associated Entrez ID
-- Which Entrez ID has the most probes?
-- What probes are used for the gene *TP53*
-
+- How many unique Entrez gene IDs are there? HINT: there is a function called `unique`....
+- How many features do not have an associated Entrez ID? HINT: how is a probe without an Entrez ID represented in the vector?
 ******
+
 
 ```{r}
 
@@ -155,10 +153,6 @@ plot(E[1274,],E[10723,],xlab="201746_at",ylab="211300_s_at",col="steelblue",pch=
 cor(E[1274,],E[10723,])
 ```
 
-
-******
-Q. Use the `IQR` function to calculate the inter-quartle range of both probes. Which would be the best probe to report in an analysis?
-******
 
 ```{r}
 IQR(E[1274,])

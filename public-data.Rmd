@@ -277,9 +277,7 @@ Finally, when deciding which probe to use in the analysis, we could use some of 
 
 Another approach would be to use the variability of the probe as a measure of how *informative* it is in the study. The `IQR` (`?IQR`) function can compute this.
 
-******
-Q. Use the `IQR` function to calculate the inter-quartle range of both probes. Which would be the best probe to report in an analysis?
-******
+
 
 ```{r}
 IQR(E[1274,])
@@ -366,14 +364,14 @@ The pattern is repeated for the other probes
 
 ```{r}
 par(mfrow=c(2,4))
-boxplot(subset[1,]~pd$characteristics_ch1.1,las=2,main=fData(cohort)[rows[1],1])
-boxplot(subset[2,]~pd$characteristics_ch1.1,las=2,main=fData(cohort)[rows[1],1])
-boxplot(subset[3,]~pd$characteristics_ch1.1,las=2,main=fData(cohort)[rows[1],1])
-boxplot(subset[4,]~pd$characteristics_ch1.1,las=2,main=fData(cohort)[rows[1],1])
-boxplot(subset[5,]~pd$characteristics_ch1.1,las=2,main=fData(cohort)[rows[1],1])
-boxplot(subset[6,]~pd$characteristics_ch1.1,las=2,main=fData(cohort)[rows[1],1])
-boxplot(subset[7,]~pd$characteristics_ch1.1,las=2,main=fData(cohort)[rows[1],1])
-boxplot(subset[8,]~pd$characteristics_ch1.1,las=2,main=fData(cohort)[rows[1],1])
+boxplot(subset[1,]~pd$characteristics_ch1.1,las=2)
+boxplot(subset[2,]~pd$characteristics_ch1.1,las=2)
+boxplot(subset[3,]~pd$characteristics_ch1.1,las=2)
+boxplot(subset[4,]~pd$characteristics_ch1.1,las=2)
+boxplot(subset[5,]~pd$characteristics_ch1.1,las=2)
+boxplot(subset[6,]~pd$characteristics_ch1.1,las=2)
+boxplot(subset[7,]~pd$characteristics_ch1.1,las=2)
+boxplot(subset[8,]~pd$characteristics_ch1.1,las=2)
 ```
 
 ## Example: Extra manipulation of the clinical data
