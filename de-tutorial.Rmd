@@ -69,6 +69,7 @@ SampleGroup <- pd$source_name_ch1
 For completeness, we note that t-statistics and corresponding p-values can be generated quickly using the `genefilter` package. 
 
 ```{r}
+SampleGroup <- pd$source_name_ch1
 library(genefilter)
 destats <- rowttests(exprs(gse),fac=SampleGroup)
 head(destats)
