@@ -20,3 +20,12 @@ other packages for heatmap (heatmap.2, heatmap.plus....) that give a density plo
 dendextend - comparing dendrograms
 
 inSilicoDB - combining multiple datasets
+
+summary(pca)
+
+boxplot of pca versus clinical variables
+
+head(pca$rotation)
+
+no ggplot2 example for pca
+
