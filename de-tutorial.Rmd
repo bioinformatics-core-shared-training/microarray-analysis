@@ -186,6 +186,7 @@ To find how many genes are DE we can use the `decideTests` function, which also 
 ```{r}
 decideTests(fit2)
 table(decideTests(fit2))
+sum(abs(decideTests(fit2))==1)
 ```
 
 The "*Volcano Plot*" function is a common way of visualising the results of a DE analysis. The $x$ axis shows the log-fold change and the $y$ axis is some measure of statistical significance, which in this case is the log-odds, or "B" statistic. A characteristic "volcano" shape should be seen.
@@ -229,5 +230,27 @@ mylist <- c("LOC441066","ARF3","FMNL3","CSF1R","XLKD1","TTRAP","DMWD","SYNPO2L",
 
 testResults[which(testResults$Symbol %in% mylist),]
 
+```
+
+## Improved analysis: Doing a paired analysis
+
+```{r}
+Patient <- pd$characteristics_ch1.1
+Patient <- gsub("patient: ","",Patient)
+design.better <- model.matrix(~0+Patient+SampleGroup)
+```
+
+
+```{r}
+fit.better <- lmFit(exprs(gse.expFilt), design.better)
+fit2.better <- eBayes(fit.better)
+fit2.better$genes <- anno
+topTable(fit2.better,coef=10)
+
+```
+
+```{r}
+table(decideTests(fit2.better[,10]))
+sum(abs(decideTests(fit2.better[,10]))==1)
 ```
 
