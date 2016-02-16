@@ -232,6 +232,10 @@ testResults[which(testResults$Symbol %in% mylist),]
 
 ```
 
+
+- maybe filter on log-fc and p-value?
+- order the results according to chromosome? and position?
+
 ## Improved analysis: Doing a paired analysis
 
 ```{r}
@@ -252,5 +256,33 @@ topTable(fit2.better,coef=10)
 ```{r}
 table(decideTests(fit2.better[,10]))
 sum(abs(decideTests(fit2.better[,10]))==1)
+```
+
+# The estrogen dataset
+
+Recall the estrogen dataset from yesterday
+
+```{r}
+library(affy)
+targetsFile <- "estrogen/estrogen.txt"
+pd <- read.AnnotatedDataFrame(targetsFile,header=TRUE,sep="",row.names=1)
+pData(pd)
+ER <- pData(pd)$estrogen
+Time <- factor(pData(pd)$time.h)
+design <- model.matrix(~ER+Time)
+design
+
+design2 <- model.matrix(~ER*Time)
+design2
+
+```
+
+```{r}
+raw <-ReadAffy(celfile.path = "estrogen", filenames=rownames(pData(pd)),phenoData = pd)
+raw
+
+eset <- rma(raw)
+eset
+
 ```
 
