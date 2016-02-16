@@ -9,25 +9,7 @@ output: html_document
 
 #Historical overview
 
-(from my [thesis](https://www.repository.cam.ac.uk/handle/1810/218542) in 2007)
 
-A microarray (sometimes referred to as an array) is a device for simultaneously measuring the expression level of thousands of genes. The technology
-makes use of the base-complementarity property of DNA and the fact that
-single-stranded mRNA is produced in order for a particular gene to be expressed. Thus, by measuring the amount of mRNA we can infer the expression level of the gene.
-
-Microarrays are typically constructed by attaching single-stranded DNA
-sequences, known as probes, to a surface such as a glass slide. Each probe is
-complementary to the DNA sequence of a particular gene of interest and is
-placed in spots (or features) at pre-defined locations. Single-stranded mRNA
-from a sample of interest (called the target) is isolated, converted into single-
-stranded DNA (cDNA) and then transcribed into cRNA. These cRNA are
-then fluorescently labelled, and exposed to the microarray surface. The target RNA then binds (hybridises) to its complementary probe sequence on the microarray, whereas non-complementary sequences should fail to hybridise.
-The amount of fluorescence observed at each feature can therefore be used
-to determine the level of expression for each of the genes represented on the
-array. In the earliest microarrayseach feature on
-the array corresponded to a different gene of interest. However, subsequent
-developments in microarray production have allowed the same gene to be rep-
-resented multiple times, thus providing more reliable expression estimates.
 Two-colour microarrays were used to compare two samples (e.g. cancer
 and normal cells) on the same microarray. The RNA from the two samples
 is extracted separately and fluorescently labelled with different dyes, usually
@@ -35,11 +17,6 @@ red and green. Therefore, after hybridisation, each feature is a mixture of
 red and green fluorescence. A completely red or green feature indicates that
 a particular gene is expressed in one sample, but not the other. 
 
-
-Each company has a different method of manufacturing microarrays, the major differences being the production of the probe sequences
-used and the method of depositing these sequences onto the array surface.
-For instance, different length probe sequences (usually measured in the number of base-pairs) can be used as well as mRNA or cDNA probes, rather than
-the cRNA probes described above.
 
 ![probe-and-target](https://upload.wikimedia.org/wikipedia/en/c/c8/Microarray-schema.jpg)
 

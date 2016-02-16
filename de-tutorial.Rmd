@@ -55,22 +55,36 @@ View(pd)
 SampleGroup <- pd$source_name_ch1
 ```
 
+
+
+
+******
+##Q Create a design matrix for the experiment, on paper if you like
+
+******
+
+
 # Simple t-tests
 
 For completeness, we note that t-statistics and corresponding p-values can be generated quickly using the `genefilter` package. 
 
 ```{r}
+SampleGroup <- pd$source_name_ch1
 library(genefilter)
-destats <- rowttests(exprs(gse),SampleGroup)
+destats <- rowttests(exprs(gse),fac=SampleGroup)
 head(destats)
 ```
 
 - Can we remember the drawbacks of this approach?
 
 
-# The linear model approach
 
-Create a design matrix. Recall that this is basically how we define which sample group each array belongs to. We can either do this by hand or using a convenient function in `limma`. 
+A useful function is the `model.matrix`, which understands the linear model syntax of R (i.e. using the tilde `~` symbol)
+
+```{r}
+design <- model.matrix(~0+SampleGroup)
+colnames(design) <- c("Normal","Tumour")
+```
 
 By-hand, we would do;
 
@@ -86,14 +100,6 @@ or a shortcut in this would use the `rep` function.
 ```{r}
 design[,1] <- rep(c(0,1),by=9)
 design[,2] <- rep(c(1,0),by=9)
-```
-
-Clearly this is both time-consuming and prone to error. Recommended is the `model.matrix` function, which understands the linear model syntax of R (i.e. using the tilde `~` symbol)
-
-```{r}
-design <- model.matrix(~0+SampleGroup)
-design
-colnames(design) <- c("Normal","Tumour")
 ```
 
 Prior to the differential expression analysis, we will *filter* the data so only the top 50% most-variable genes get analysed, which [has been shown](http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2906865/) to increase our power to detect differential expression. We can do this using the `varFilter` function in the `genefilter` package.

@@ -1,6 +1,6 @@
 ---
 title: "Importing publicly available data"
-author: "Mark Dunning; mark.dunning@cruk.cam.ac.uk"
+author: "Mark Dunning; mark 'dot' dunning 'at' cruk.cam.ac.uk, Oscar Rueda; oscar 'dot' rueda 'at' cruk.cam.ac.uk"
 date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
 output: html_document
 ---
@@ -27,9 +27,18 @@ Several breast cancer datasets have been curated for use with the genefu package
 - [breastCancerNKI](http://bioconductor.org/packages/release/data/experiment/html/breastCancerNKI.html)
 - [breastCancerVDX](http://bioconductor.org/packages/release/data/experiment/html/breastCancerVDX.html)
 
+```{r eval=FALSE}
+source("http://www.bioconductor.org/biocLite.R")
+biocLite("breastCancerNKI")
+biocLite("breastCancerVDX")
+```
+
+
 also
 
-- curatedBreastData
+- [curatedBreastData](http://bioconductor.org/packages/release/data/experiment/html/curatedBreastData.html)
+- [curatedBladderData](http://bioconductor.org/packages/release/data/experiment/html/curatedBladderData.html)
+- [curatedOvarianData](http://bioconductor.org/packages/release/data/experiment/html/curatedOvarianData.html)
 
 ******
 
@@ -39,13 +48,13 @@ also
 
 Can search from GEO [home page](http://www.ncbi.nlm.nih.gov/geo/) or using this [Shiny app](https://zhiji.shinyapps.io/GEOsearch) to get a dataset ID which will be of the form **GSE....**.
 
-With this identifier, we can use the GEOquery Bioconductor package
+With this identifier, we can use the [GEOquery](http://bioinformatics.oxfordjournals.org/content/23/14/1846.long) Bioconductor package
 
 ```{r message=FALSE}
 library(GEOquery)
 ```
 
-## Example 1. General procedure
+## Example. General procedure
 
 Lets say we have identified a dataset which has leukemia patients. The web page describing these data is [here](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE1729). The main function we need to use is `getGEO`. This downloads the *series* file for the dataset and parses the data in this file into a format that is compatible with Bioconductor. 
 
@@ -95,7 +104,7 @@ fData(mydata)[1,1:8]
 
 
 
-## Example 1.1 Quality assessment of the downloaded data
+## Example. Quality assessment of the downloaded data
 
 As we have downloaded the processed and normalised data, there are limited options in terms of quality assessment. Without the *.cel* files we cannot examine the raw images or fit PLMs. The simplest form of QA is the boxplot.
 
@@ -172,7 +181,7 @@ subset <- mydata[1:100,]
 
 In the next section we will look into the annotation of the dataset in more detail
 
-## Example 1.2 - Dealing with gene annotation
+## Example. Dealing with gene annotation
 
 The annotation for the features can be retrieved by using `fData`. Because of the strict submission process, all the rows of this feature matrix are in the same order as the expression matrix; which greatly-simplifies further analysis
 
@@ -200,11 +209,8 @@ colnames(features)
 
 ## Exercise
 
-- How many unique Entrez gene IDs are there?
-- How many features do not have an associated Entrez ID
-- Which Entrez ID has the most probes?
-- What probes are used for the gene *TP53*
-
+- How many unique Entrez gene IDs are there? HINT: there is a function called `unique`....
+- How many features do not have an associated Entrez ID? HINT: how is a probe without an Entrez ID represented in the vector?
 ******
 
 
@@ -271,9 +277,7 @@ Finally, when deciding which probe to use in the analysis, we could use some of 
 
 Another approach would be to use the variability of the probe as a measure of how *informative* it is in the study. The `IQR` (`?IQR`) function can compute this.
 
-******
-Q. Use the `IQR` function to calculate the inter-quartle range of both probes. Which would be the best probe to report in an analysis?
-******
+
 
 ```{r}
 IQR(E[1274,])
@@ -282,7 +286,7 @@ IQR(E[10723,])
 
 
 
-## Example 2. Dealing with large cohorts
+## Example. Dealing with large cohorts
 
 For this second example, we will import a patient cohort
 ```{r}
@@ -360,14 +364,14 @@ The pattern is repeated for the other probes
 
 ```{r}
 par(mfrow=c(2,4))
-boxplot(subset[1,]~pd$characteristics_ch1.1,las=2,main=fData(cohort)[rows[1],1])
-boxplot(subset[2,]~pd$characteristics_ch1.1,las=2,main=fData(cohort)[rows[1],1])
-boxplot(subset[3,]~pd$characteristics_ch1.1,las=2,main=fData(cohort)[rows[1],1])
-boxplot(subset[4,]~pd$characteristics_ch1.1,las=2,main=fData(cohort)[rows[1],1])
-boxplot(subset[5,]~pd$characteristics_ch1.1,las=2,main=fData(cohort)[rows[1],1])
-boxplot(subset[6,]~pd$characteristics_ch1.1,las=2,main=fData(cohort)[rows[1],1])
-boxplot(subset[7,]~pd$characteristics_ch1.1,las=2,main=fData(cohort)[rows[1],1])
-boxplot(subset[8,]~pd$characteristics_ch1.1,las=2,main=fData(cohort)[rows[1],1])
+boxplot(subset[1,]~pd$characteristics_ch1.1,las=2)
+boxplot(subset[2,]~pd$characteristics_ch1.1,las=2)
+boxplot(subset[3,]~pd$characteristics_ch1.1,las=2)
+boxplot(subset[4,]~pd$characteristics_ch1.1,las=2)
+boxplot(subset[5,]~pd$characteristics_ch1.1,las=2)
+boxplot(subset[6,]~pd$characteristics_ch1.1,las=2)
+boxplot(subset[7,]~pd$characteristics_ch1.1,las=2)
+boxplot(subset[8,]~pd$characteristics_ch1.1,las=2)
 ```
 
 ## Example: Extra manipulation of the clinical data

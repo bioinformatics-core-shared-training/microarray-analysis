@@ -1,6 +1,6 @@
 ---
 title: "Ontologies and Enrichment"
-author: "Mark Dunning; mark.dunning@cruk.cam.ac.uk, Oscar Rueda; oscar.rueda@cruk.cam.ac.uk"
+author: "Mark Dunning; mark 'dot' dunning 'at' cruk.cam.ac.uk, Oscar Rueda; oscar 'dot' rueda 'at' cruk.cam.ac.uk"
 date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
 output: html_document
 ---
@@ -26,7 +26,7 @@ The question we are asking here is;
 Where Theme X could be genes belonging to a particular GO (Gene Onotology) term.
 
 Let's imagine that we have a bag full of balls. Each balls represents a gene in the *gene universe*. 
-- Paint the balls representing our selected list grey, and paint the rest black.
+- Paint the balls representing our selected list grey, and paint the rest red.
 
 
 ![bag-and balls](images/bag-and-balls.png)
@@ -41,14 +41,16 @@ Now, lets select a number (say, 12) of the balls at random without seeing into t
 ![picked-balls](images/picked-balls.png)
 
 
-We have picked, at random, 8 grey balls. Using simulations, we can repeat the process and look at how many grey we get. We can (of course!) do this in R 
+We have picked, at random, 8 grey balls. Using simulations, we can repeat the process and look at how many grey we get. We can (of course!) do this in R. In base R there is a family of functions that can generate random draws from various distributions; `rnorm`, `rbinom`, `rhyper` etc....
 
 ```{r}
-trials <- rhyper(10000,30,10,10)
+#see ?rhyper for argument definition
+trials <- rhyper(10000,40,10,12)
 hist(trials)
 table(trials)
 table(trials)/10000
 cumsum(table(trials)/10000)
+1-cumsum(table(trials)/10000)
 ```
 
 Back to our example, the distribution of balls can be expressed as a contingency table, on which we can use a Fisher's exact test
