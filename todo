@@ -1,0 +1,18 @@
+
+use absolute values in the correlation matrix
+
+ask question about whether clustering makes sense
+
+plot(as.dendrogram(..,horiz=TRUE))
+
+WGCNA to colour the dendrograms?
+
+What is difference going from clustering with k = 2 to k=3?
+
+Discuss whether to remove the outlier or not? Is this mentioned in the paper
+
+Get the order of the genes (rows) in the heatmap?
+
+heatmap of a list of genes, rather than cell-cycle pathway
+
+other packages for heatmap (heatmap.2, heatmap.plus....) that give a density plot, or multiple sample colours
