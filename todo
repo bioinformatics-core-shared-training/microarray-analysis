@@ -16,3 +16,7 @@ Get the order of the genes (rows) in the heatmap?
 heatmap of a list of genes, rather than cell-cycle pathway
 
 other packages for heatmap (heatmap.2, heatmap.plus....) that give a density plot, or multiple sample colours
+
+dendextend - comparing dendrograms
+
+inSilicoDB - combining multiple datasets
