@@ -52,10 +52,12 @@ nrow (colonData) / nrow (varFiltered)
 ## Calculating a distance matrix
 
 The first step towards clustering the data is to construct a distance matrix. Each entry in
-this matrix is the pairwise distance between two samples. Note that for expression data we have to transpose the standard ExpressionSet format, as clustering is designed to work on
-rows rather than columns. The standard function to make a distance matrix in R is dist
+this matrix is the pairwise distance between two samples. Note that for expression data we have to transpose the standard `ExpressionSet` format, as clustering is designed to work on
+rows rather than columns. The standard function to make a distance matrix in R is `dist`
 which uses the euclidean metric. As the data entries in a distance matrix are symmetrical, it
 has a different representation to the default matrix (i.e. values are not repeated unnecessarily), and clustering algorithms are able to accept this representation as input.
+
+**N.B. to calculate the distances between samples, we have to transpose the expression matrix (e.g. using the function `t`). If we do not do this, R will try and compute distances between all genes which may take a long time or exceed the available memory)**
 
 ```{r}
 euc.dist <- dist (t(exprs(varFiltered)))
@@ -64,7 +66,7 @@ euc.dist
 
 For gene-expression data, it is common to use correlation as a distance metric rather than
 the Euclidean. You should make sure that you know the difference between the two metrics.
-The cor function can be used to calculate the correlation of columns in a matrix. Each row
+The `cor` function can be used to calculate the correlation of columns in a matrix. Each row
 (or column) in the resulting matrix is the correlation of that sample with all other samples
 in the dataset. The matrix is symmetrical and we can transform this into a distance matrix
 by first subtracting 1 from the correlation matrix. Hence, samples with a higher correlation
@@ -76,6 +78,13 @@ corMat <- cor(exprs(varFiltered))
 corMat
 cor.dist <- as.dist(1 - corMat)
 ```
+
+The values given by the `cor` function can be either positive or negative, depending on whether two samples are positively or negatively correlated. However, for our distance matrix to contain only values in the range 0 to 1. In which case we would need to use the *absolute* values from the correlation matrix before converting to distances.
+
+```{r}
+cor.dist <- as.dist(1 - abs(corMat))
+```
+
 
 ## Hierachical clustering
 
@@ -95,17 +104,56 @@ par(mfrow = c (1 , 2))
 clust.euclid = hclust(euc.dist)
 clust.cor = hclust (cor.dist)
 par (mfrow = c (1 , 2))
-plot(clust.euclid , label = SampleGroup )
-plot(clust.cor , label = SampleGroup )
+plot(clust.euclid)
+plot(clust.cor)
 ```
+
+
+******
+## Q  Do you see the same clustering arising from the different distance matrices?
+******
+
+It is helpful to think of the dendrogram as a mobile that you might see hanging in a child's nursery. 
+![mobile](images/stock-illustration-64779351-hanging-baby-mobile-sculpture-stars-and-moon-drawing.jpg)
+
+
+The default plotting for a dendrogram labels the "leaves" with the column names from the input matrix, in our case the sample names from GEO. This may make the interpretation of the dendrogram difficult, as it may not be obvious which sample group each sample belongs to. We can alter the appearance of the dendrogram so that sample groups appear in the labels.
+
+
+```{r}
+par(mfrow = c (1 , 2))
+clust.euclid = hclust(euc.dist)
+clust.cor = hclust (cor.dist)
+par (mfrow = c (1 , 2))
+plot(clust.euclid,label=SampleGroup)
+plot(clust.cor,label=SampleGroup)
+```
+
+
+
+```{r}
+dend.euclid <- as.dendrogram(clust.euclid)
+dend.cor <- as.dendrogram(clust.cor)
+plot(dend.euclid,horiz=TRUE,label=SampleGroup)
+plot(dend.cor,horiz=TRUE,label=SampleGroup)
+```
+
+******
+## Q  Does the clustering make sense in relation to the sample groups in the experiment? 
+## Q  Do any samples appear incorrectly clustered?
+******
+
+The `WGCNA` package in Bioconductor provides methods for finding clusters of correlated genes, which we will not be looking at in this tutorial. However, the package is of interest as it provides other visualisation methods for dendrograms which allows colours to be overlaid to distinguish sample groups.
+
+
 
 ## Extracting data from the clustering
 
 If we want to interpret the data presented in a clustering analysis, we need a way of extract-
 ing which samples are grouped together, or to determine the optimal grouping of samples.
 One intuitive way of assigning groups it to ’cut’ the dendrogram at a particular height on
-the y-axis. We can do this manually on the plot, or use the cutree function to return the
-labels of samples that are belong to the same group when the dendrogram is cut at the specified height, h. Alternatively, we can specify how many groups, k, that we want to create.
+the y-axis. We can do this manually on the plot, or use the `cutree` function to return the
+labels of samples that are belong to the same group when the dendrogram is cut at the specified height, `h`. Alternatively, we can specify how many groups, `k`, that we want to create.
 
 ```{r}
 library (cluster)
@@ -173,7 +221,20 @@ The default options for the heatmap are to cluster both the genes (rows) and sam
 However, sometimes we might want to specify a particular order. For example, we might
 want to order the columns according to sample groups. We can do this by re-ordering the
 input matrix manually and setting the `Colv` argument to `NA`. This tells the heatmap function not be
-cluster the columns. It choosing this option, we need to be careful that any column colourings or labels are set to the same ordering. Alternatively, a pre-calculated dendrogram could be used.
+cluster the columns. 
+
+```{r}
+heatmap (as.matrix(exprs(varFiltered)[highVarGenes, ]),
+         labCol = SampleGroup , labRow = Symbols,Colv=NA)
+```
+
+```{r}
+heatmap (as.matrix(exprs(varFiltered)[highVarGenes, order(SampleGroup)]),
+         labCol = SampleGroup[order(SampleGroup)], labRow = Symbols,Colv = NA)
+```
+
+
+Alternatively, a pre-calculated dendrogram could be used.
 
 ```{r}
 clus.ward <- hclust (cor.dist , method = "ward")
@@ -185,7 +246,7 @@ heatmap (as.matrix(exprs(varFiltered)[highVarGenes, ]) ,
 ## Customising the heatmap
 
 The heatmap function can be customised in many ways to make the output more informa-
-tive. For example, the labRow and labCol parameters can be used to give labels to the rows
+tive. For example, the `labRow` and `labCol` parameters can be used to give labels to the rows
 (genes) and columns (sample) of the heatmap. Similarly, `ColSideColors` and `RowSideColors` give coloured labels, often used to indicate different groups which are know in advance.
 See the help page for heatmap for more details.
 
@@ -198,8 +259,8 @@ heatmap(as.matrix(exprs(varFiltered)[highVarGenes, ]) ,
 ```
 
 The colours used to display the gene expression values can also be modified. For this, we
-can use the RColorBrewer package which has functions for creating pre-defined palettes. The
-function display.brewer.all can be used to display the palettes available through this
+can use the `RColorBrewer` package which has functions for creating pre-defined palettes. The
+function `display.brewer.all` can be used to display the palettes available through this
 package.
 
 ```{r}
@@ -211,28 +272,59 @@ heatmap (as.matrix(exprs(varFiltered)[highVarGenes, ]) ,
   col=hmcol)
 ```
 
-You should avoid using the traditional red / green colour scheme as it may be difficult for
-people with colour-blindness to interpret
+** You should avoid using the traditional red / green colour scheme as it may be difficult for
+people with colour-blindness to interpret **
 
 A popular use for heatmaps is to take an existing gene list (e.g. genes found to be significant
 in a previous study, or genes belonging to a particular pathway) and produce an image of
 how they cluster the data for exploratory purposes. This can be achieved by selecting
 the correct rows in the data matrix.
 
-Here we use the pre-built annotation package for the particular array platform (`illuminaHumanv3.db`). These packages contain mappings between the manufacturer identifiers, and more-common genomic identifiers. The `illuminaHumanv3PATH` mapping will take a set of illumina IDs and return the KEGG pathway for each. However, if we want the Illumina IDs for a particular KEGG pathway, we have to *reverse* the mapping. 
-
 ```{r}
-library (illuminaHumanv3.db)
-pathwayGenes <- unlist (mget("04110" , revmap(illuminaHumanv3PATH)))
-pathwayGenes <- pathwayGenes [pathwayGenes %in% featureNames(varFiltered)]
-symbols <- fData(varFiltered)[pathwayGenes , "Symbol"]
-heatmap (as.matrix(exprs(varFiltered)[pathwayGenes , ]),
+tests <- rowttests(exprs(varFiltered),SampleGroup)
+N <- 50
+myGenes <- rownames(tests)[1:N]
+symbols <- fData(varFiltered)[myGenes,"Symbol"]
+heatmap (as.matrix(exprs(varFiltered)[myGenes , ]),
   ColSideColors = as.character (labs) , labCol = Patient ,
   labRow = symbols , col = hmcol )
+```
+
+
+## Other packages that produce heatmaps
+
+One drawback of the standard `heatmap` function is that it only allows one "track" of colours below the dendrogram. We might wish to display various sample groupings using this feature. The `heatmap.plus` package allows us to do just this.
+
+```{r}
+library(heatmap.plus)
+colourMatrix <- matrix(nrow=length(SampleGroup),ncol=2)
+patientCol <- rep(rainbow(n=length(unique(Patient))),each=2)
+colourMatrix[,1] <- as.character(labs)
+colourMatrix[,2] <- patientCol
+
+heatmap.plus (as.matrix(exprs(varFiltered)[highVarGenes, ]) ,
+  ColSideColors = as.matrix(colourMatrix) , labRow = Symbols,
+  col=hmcol)
 
 ```
 
-Later on, we will show how other identifier mapping can be performed using so-called organism packages.
+Another alternative is provided by the `gplots` package. The `heatmap.2` function can be used in the same fashion as `heatmap`. The plots produced include a colour legend for the cells in the heatmap. By default, a density plot of each column is also produced.
+
+```{r}
+library(gplots)
+heatmap.2 (as.matrix(exprs(varFiltered)[highVarGenes, ]) ,
+  ColSideColors = as.character(labs) , labRow = Symbols,
+  col=hmcol)
+```
+
+We can turn-off the column density if we wish.
+
+```{r}
+heatmap.2 (as.matrix(exprs(varFiltered)[highVarGenes, ]) ,
+  ColSideColors = as.character(labs) , labRow = Symbols,
+  col=hmcol,trace="none")
+```
+
 
 ## Principal Components Analysis
 
@@ -248,21 +340,28 @@ plot(pca)
 summary(pca)
 ```
 
-The ggplot2 package is convenient for plotting principal components results as it allows many
-different covariates to be overlaid on the plot. See http://ggplot2.org/ for more informa-
-tion on this package.
-
 ```{r}
-library(ggplot2)
-clusLabs <- cutree(clust.cor , k = 3)
-pcRes <- data.frame(pca$rotation , SampleGroup , Sample = Patient)
-ggplot (pcRes , aes(x = PC1 , y = PC2 , col = SampleGroup ,
-                       label = Patient , pch = as.factor(clusLabs))) + geom_point () +
-      geom_text(vjust=0,alpha=0.5)
-  
+head(pca$rotation)
+boxplot(pca$rotation[,1]~SampleGroup)
 ```
 
 
+```{r}
+plot(pca$rotation[,1],pca$rotation[,2])
+```
+
+
+```{r}
+plot(pca$rotation[,1],pca$rotation[,2],
+     pch=16,col=as.character(labs))
+```
+
+```{r}
+plot(pca$rotation[,1],pca$rotation[,2],
+     pch=16,col=as.character(labs))
+legend("topright",fill=c("blue","yellow"),legend=c("tumour","normal"))
+text(pca$rotation[,1],pca$rotation[,2]-0.01,labels = Patient)
+```
 
 
 # Classification
