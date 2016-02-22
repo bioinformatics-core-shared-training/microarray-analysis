@@ -150,14 +150,8 @@ We usually get our first look at the results by using the `topTable` command
 topTable(fit2)
 ```
 
-The columns are as follows;
+The rows in this table are ordered according the *B-statistic*, or log-odds from the empirical Bayes' analysis. You should be cautious when interpreting these values. Although a B-statistic of 0 corresponds to a 50/50 chance of a gene being DE, this is contingent on a certain percentage of genes in the experiment being DE. In experiments such as the one we are looked at here, there are a large number of DE genes. In this case genes with B-statistic < 0 could still be DE. Thus, you should use the B-statistic as a ranking criteria and not attempt to compare the values between experiments.
 
-- logFC
-- AveExpr
-- t
-- P.Value
-- adj.P.Val
-- B
 
 # Including annotation
 
@@ -182,6 +176,8 @@ boxplot(exprs(gse)["ILMN_1704294",]~SampleGroup)
 ```
 
 To find how many genes are DE we can use the `decideTests` function, which also applies multiple-test correction.
+
+*Make a note of how many genes are DE, you will need this later*
 
 ```{r}
 decideTests(fit2)
@@ -233,29 +229,53 @@ testResults[which(testResults$Symbol %in% mylist),]
 ```
 
 
-- maybe filter on log-fc and p-value?
-- order the results according to chromosome? and position?
+## Further filtering and ordering
+
+******
+## Q. Create a data frame containing genes with i) adjsuted p-value < 0.05 ii) log-fold change > 1. How many genes does this contain?
+## Q. Now order this data frame according to chromosome
+
+******
+
+```{r echo=FALSE}
+filtResults <- testResults[testResults$Chromosome != "" & testResults$adj.P.Val < 0.05 & testResults$logFC < 1,]
+dim(filtResults)
+head(filtResults)
+
+orderedHits <- testResults[order(testResults$Chromosome),]
+head(orderedHits)
+```
+
+
+
 
 ## Improved analysis: Doing a paired analysis
 
-```{r}
+******
+## Q.  What would the design matrix look like to incorporate patient ID into the model
+## Q. Create this model using the `model.matrix` function
+******
+
+
+```{r echo=FALSE}
 Patient <- pd$characteristics_ch1.1
 Patient <- gsub("patient: ","",Patient)
 design.better <- model.matrix(~0+Patient+SampleGroup)
 ```
 
+******
+## Q. Proceed to fit your model to the data
+## Q. How many genes are DE? How does this compare to the previous model?
+******
 
 ```{r}
 fit.better <- lmFit(exprs(gse.expFilt), design.better)
 fit2.better <- eBayes(fit.better)
 fit2.better$genes <- anno
 topTable(fit2.better,coef=10)
-
-```
-
-```{r}
 table(decideTests(fit2.better[,10]))
 sum(abs(decideTests(fit2.better[,10]))==1)
+
 ```
 
 # The estrogen dataset
