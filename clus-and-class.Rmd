@@ -129,21 +129,24 @@ plot(clust.euclid,label=SampleGroup)
 plot(clust.cor,label=SampleGroup)
 ```
 
-
-
-```{r}
-dend.euclid <- as.dendrogram(clust.euclid)
-dend.cor <- as.dendrogram(clust.cor)
-plot(dend.euclid,horiz=TRUE,label=SampleGroup)
-plot(dend.cor,horiz=TRUE,label=SampleGroup)
-```
-
 ******
 ## Q  Does the clustering make sense in relation to the sample groups in the experiment? 
 ## Q  Do any samples appear incorrectly clustered?
 ******
 
 The `WGCNA` package in Bioconductor provides methods for finding clusters of correlated genes, which we will not be looking at in this tutorial. However, the package is of interest as it provides other visualisation methods for dendrograms which allows colours to be overlaid to distinguish sample groups.
+
+```{r message=FALSE}
+library(WGCNA)
+```
+
+
+```{r}
+groupColours <- as.factor(SampleGroup)
+levels(groupColours) <- c ("yellow" , "blue")
+plotDendroAndColors(clust.euclid,colors=groupColours)
+
+```
 
 
 
@@ -251,29 +254,29 @@ tive. For example, the `labRow` and `labCol` parameters can be used to give labe
 See the help page for heatmap for more details.
 
 ```{r}
-labs <- as.factor(SampleGroup)
-levels(labs) <- c ("yellow" , "blue")
+
 heatmap(as.matrix(exprs(varFiltered)[highVarGenes, ]) ,
-        labCol = Patient, ColSideColors = as.character(labs),
+        labCol = Patient, ColSideColors = as.character(groupColours),
         labRow = Symbols)
 ```
 
 The colours used to display the gene expression values can also be modified. For this, we
 can use the `RColorBrewer` package which has functions for creating pre-defined palettes. The
 function `display.brewer.all` can be used to display the palettes available through this
-package.
+package. 
+
+**You should avoid using the traditional red / green colour scheme as it may be difficult for people with colour-blindness to interpret!**
+
 
 ```{r}
 library (RColorBrewer)
 display.brewer.all()
 hmcol <- brewer.pal(11 , "RdBu")
 heatmap (as.matrix(exprs(varFiltered)[highVarGenes, ]) ,
-  ColSideColors = as.character(labs) , labRow = Symbols,
+  ColSideColors = as.character(groupColours) , labRow = Symbols,
   col=hmcol)
 ```
 
-** You should avoid using the traditional red / green colour scheme as it may be difficult for
-people with colour-blindness to interpret **
 
 A popular use for heatmaps is to take an existing gene list (e.g. genes found to be significant
 in a previous study, or genes belonging to a particular pathway) and produce an image of
@@ -286,7 +289,7 @@ N <- 50
 myGenes <- rownames(tests)[1:N]
 symbols <- fData(varFiltered)[myGenes,"Symbol"]
 heatmap (as.matrix(exprs(varFiltered)[myGenes , ]),
-  ColSideColors = as.character (labs) , labCol = Patient ,
+  ColSideColors = as.character (groupColours) , labCol = Patient ,
   labRow = symbols , col = hmcol )
 ```
 
@@ -299,7 +302,7 @@ One drawback of the standard `heatmap` function is that it only allows one "trac
 library(heatmap.plus)
 colourMatrix <- matrix(nrow=length(SampleGroup),ncol=2)
 patientCol <- rep(rainbow(n=length(unique(Patient))),each=2)
-colourMatrix[,1] <- as.character(labs)
+colourMatrix[,1] <- as.character(groupColours)
 colourMatrix[,2] <- patientCol
 
 heatmap.plus (as.matrix(exprs(varFiltered)[highVarGenes, ]) ,
@@ -313,7 +316,7 @@ Another alternative is provided by the `gplots` package. The `heatmap.2` functio
 ```{r}
 library(gplots)
 heatmap.2 (as.matrix(exprs(varFiltered)[highVarGenes, ]) ,
-  ColSideColors = as.character(labs) , labRow = Symbols,
+  ColSideColors = as.character(groupColours) , labRow = Symbols,
   col=hmcol)
 ```
 
@@ -321,7 +324,7 @@ We can turn-off the column density if we wish.
 
 ```{r}
 heatmap.2 (as.matrix(exprs(varFiltered)[highVarGenes, ]) ,
-  ColSideColors = as.character(labs) , labRow = Symbols,
+  ColSideColors = as.character(groupColours) , labRow = Symbols,
   col=hmcol,trace="none")
 ```
 
@@ -340,27 +343,46 @@ plot(pca)
 summary(pca)
 ```
 
+The variable loadings are given by the `$rotation` matrix, which has one row for each sample and one column for each principal component. The principal components are ordered accorded to amount of variance explained. The actual values of a particular component have no meaning, but their relative values can be used to inform us about relationships between samples.
+
+******
+## Q  Does the first principal component appear to be related to the sample groups in the experiment? 
+******
+
 ```{r}
 head(pca$rotation)
 boxplot(pca$rotation[,1]~SampleGroup)
+
 ```
+
+Quite often, we plot the first few PCs against each other to visualise sample relationship. This can be achived with a scatter plot with the first principal component on the x-axis, and second principal component on the y-axis.
 
 
 ```{r}
 plot(pca$rotation[,1],pca$rotation[,2])
 ```
 
+We can improve this plot by adding colours for the different sample groups and choosing a different plotting character.
 
 ```{r}
 plot(pca$rotation[,1],pca$rotation[,2],
-     pch=16,col=as.character(labs))
+     pch=16,col=as.character(groupColours))
 ```
 
+We might also add a legend to explain the different colours. 
+
 ```{r}
 plot(pca$rotation[,1],pca$rotation[,2],
-     pch=16,col=as.character(labs))
+     pch=16,col=as.character(groupColours))
 legend("topright",fill=c("blue","yellow"),legend=c("tumour","normal"))
 text(pca$rotation[,1],pca$rotation[,2]-0.01,labels = Patient)
+```
+
+Multi-dimensional Scaling (MDS) is a similar approach.  The distance between each pair of samples (columns) is the root-mean-square deviation (Euclidean distance) for the top top genes. Distances on the plot can be interpreted as leading log2-fold-change, meaning the typical (root-mean-square) log2-fold-change between the samples for the genes that distinguish those samples.
+
+```{r}
+library(limma)
+plotMDS(exprs(varFiltered),col=as.character(groupColours),labels = Patient)
 ```
 
 
