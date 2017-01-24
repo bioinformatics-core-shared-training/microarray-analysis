@@ -114,124 +114,9 @@ There is a vast amount of [Illumina](http://www.ncbi.nlm.nih.gov/geo/query/acc.c
 - Quality assessment; Yes, NGS experiments can still go wrong!
 - Normalisation; NGS data come with their own set of biases and error that need to be accounted for
 - Stats; testing for RNA-seq is built-upon the knowledge from microarrays
+    + some of the analysis we do for proteomics uses the linear modelling approach to be described later
 
 Microarray data are much more manageable in size. We can work with decent-sized experiments (~100s of samples) and learn about high-dimensional analysis techniques that you will encounter in the analysis of newer, sexier, technologies.
-
-
-## Advantages of R
-
-![NYT](images/NYTimes_R_Article.png)
-
-The R programming language is now recognised beyond the academic community as an effect solution for data analysis and visualisation. [Notable users of R](http://www.revolutionanalytics.com/companies-using-r) include [Facebook](http://blog.revolutionanalytics.com/2010/12/analysis-of-facebook-status-updates.html), [google](http://blog.revolutionanalytics.com/2009/05/google-using-r-to-analyze-effectiveness-of-tv-ads.html), [Microsoft](http://blog.revolutionanalytics.com/2014/05/microsoft-uses-r-for-xbox-matchmaking.html) (who recently [invested](http://blogs.microsoft.com/blog/2015/01/23/microsoft-acquire-revolution-analytics-help-customers-find-big-data-value-advanced-statistical-analysis/) in a commerical provider of R), and the [New York Times](http://blog.revolutionanalytics.com/2011/03/how-the-new-york-times-uses-r-for-data-visualization.html).
-
-The main advantages are;
-
-- Open-source
-- Cross-platform
-- Access to existing visualisation / statistical tools
-- Flexibility
-- Visualisation and interactivity
-- Facilitaing ***Reproducible Research***
-
-![duke-scandal](images/rep-research-nyt.png)
-
-Two Biostatiscians (later termed '*Forensic Bioinformaticians*') from M.D. Anderson used R extensively during their re-analysis and investigation of a Clinical Prognostication paper from Duke. The subsequent [scandal](https://www.youtube.com/watch?v=W5sZTNPMQRM) put Reproducible Research on the map.
-
-Keith Baggerly's [talk](https://www.youtube.com/watch?v=7gYIs7uYbMo) from Cambridge in 2010 is highy-recommended.
-
-## Support for R
-
-- Online forums such as [Stack Overflow](http://stackoverflow.com/questions/tagged/r) regularly feature R
-- [Blogs](http://www.r-bloggers.com/)
-- Local [user groups](http://www.meetup.com/Cambridge-R-Users-Group-Meetup/) 
-- Documentation via `?` or `help.start()`
-
-## RStudio
-
-![RStudio](http://www.rstudio.com/wp-content/uploads/2014/03/blue-125.png)
-
-- [Rstudio](https://www.rstudio.com) is a free environment for R
-- Convenient menus to access scripts, display plots
-- Still need to use *command-line* to get things done
-- Developed by some of the leading R programmers
-
-## R recap
-
-R can do simple numerical calculations
-```{r}
-2  + 2
-sqrt(25)
-```
-
-Here, `sqrt` is a *function* and the number 25 was used as an *argument* to the function. Functions can have multiple arguments
-
-## variables
-
-We can save the result of a computation as a *variable* using the *assignment* operator `<-`
-
-```{r}
-x <- sqrt(25)
-x + 5
-y <- x +5
-y
-```
-
-## vectors
-
-A vector can be used to combine multiple values. The resulting object is indexed and particular values can be queried using the `[]` operator
-
-```{r}
-vec <- c(1,2,3,6)
-vec[1]
-```
-
-## vectors
-
-Calculations can be performed on vectors
-
-```{r}
-vec*2
-mean(vec)
-sum(vec)
-```
-
-## Data frames
-
-These can be used to represent familiar tabular (row and column) data
-
-```{r}
-df <- data.frame(A = c(1,2,3,6), B = c(7,8,10,12))
-df
-```
-
-## Data frames
-
-Don't need the same data *type* in each column
-
-```{r}
-df <- data.frame(A = c(1,2,3,6), 
-                 B = month.name[c(7,8,10,12)])
-df
-```
-
-##Data frame
-
-We can subset data frames using the `[]`, but can specify row and column indices
-
-```{r}
-df[1,2]
-df[2,1]
-```
-
-##Data frame
-
-```{r}
-df[1,]
-df[,2]
-```
-
-
-Or leave the row or column index blank to get all rows and columns respectively
 
 ## The Bioconductor project
 
@@ -246,7 +131,7 @@ Or leave the row or column index blank to get all rows and columns respectively
 - [Available Support](https://support.bioconductor.org/)
     + Often you will be able to interact with the package maintainers / developers and other power-users of the project software
 - Annual conferences in U.S and Europe
-    - The last European conference was in [Cambridge](https://sites.google.com/site/eurobioc2015/)
+    - The 2015 European conference was in [Cambridge](https://sites.google.com/site/eurobioc2015/)
     
 Many of the packages are by well-respected authors and get lots of citations.
 
@@ -278,7 +163,3 @@ A dataset may be split into different components
 - Annotation for the probes
 
 In Bioconductor we will often put these data the same object for easy referencing. The `Biobase` package has all the code to do this.
-
-## Practical time
-
-We will now practice reading data into R, subsetting and creating some of these basic object types

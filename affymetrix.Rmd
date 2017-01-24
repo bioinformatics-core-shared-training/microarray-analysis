@@ -1,11 +1,14 @@
 ---
-title: "Affymetrix"
-author: "Mark Dunning; mark 'dot' dunning 'at' cruk.cam.ac.uk, Oscar Rueda; oscar 'dot' rueda 'at' cruk.cam.ac.uk"
-date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
-output: html_document
+title: "The Affymetrix Analysis Workflow"
+author: Mark Dunning, based on materials by Benilton Carvalho
+output: 
+  html_notebook: 
+    toc: yes
+    toc_float: yes
 ---
 
-![affy](https://upload.wikimedia.org/wikipedia/commons/2/22/Affymetrix-microarray.jpg)
+
+![](https://upload.wikimedia.org/wikipedia/commons/2/22/Affymetrix-microarray.jpg)
 
 # Technology overview
 
@@ -17,7 +20,7 @@ short (25mer) probes to measure hybridisation.
 In this practical, we explore the basic analysis issues for Affymetrix GeneChips which measure gene expression using multiple (11-20) perfect match (PM) and mismatch (MM) probes
 concentrated in the 3’ region of each transcript. 
 
-![pm-picture](images/pm.png)
+![](images/pm.png)
 
 Despite our focus on expression arrays, many
 of the processing steps, such as quality assessment and normalisation are equally important
@@ -45,39 +48,34 @@ the other two. Since there are two factors in this experiment (estrogen and time
 two levels (present or absent, 10 hours or 48 hours), this experiment is said to have a 2 × 2
 factorial design.”
 
-The data for this section are described the [estrogen data package](http://www.bioconductor.org/packages/release/data/experiment/html/estrogen.html)
-
-```{r echo=FALSE,cache=TRUE,include=FALSE}
-datadir <- system.file("extdata", package="estrogen")
-dir.create("estrogen")
-sapply(list.files(datadir), function(x) file.copy(paste(datadir,x,sep="/"),"estrogen"))
-```
-
-
+The data for this section are described in the [estrogen data package](http://www.bioconductor.org/packages/release/data/experiment/html/estrogen.html) in Bioconductor
 
 The cel files for the example experiement are stored in the `estrogen` directory
 
 The first stage is to read the *targets* file. In Bioconductor we often use a targets file to define the files corresponding to the raw data for the experiment and which sample groups they belong to. Such a file can be created in a spreadsheet, or text editor, and usually saved as a tab-delimited file. We can have as many columns in the file as we see fit, and one row for each hybridisation. The sample group information is propogated through the analysis and incorporated in the quality assessment and eventually differential expression. We refer to this as the "phenotype data" for the experiment, or sometimes the *"metadata"*.
 
-```{r message=FALSE}
+```{r}
 library(affy)
 targetsFile <- "estrogen/estrogen.txt"
+targetsFile
 pd <- read.AnnotatedDataFrame(targetsFile,header=TRUE,sep="",row.names=1)
 pData(pd)
 ```
 
-As cel files are not a typical file format, we cannot use the standard R functions such as `read.delim`, `read.csv` and `read.table`. The function to import the data is `ReadAffy` from the [affy](http://bioconductor.org/packages/release/bioc/html/affy.html) package. 
 
-```{r,message=FALSE,warning=FALSE}
+
+As `.cel` files are not a typical file format, we cannot use the standard R functions such as `read.delim`, `read.csv` and `read.table`. The function to import the data is `ReadAffy` from the [affy](http://bioconductor.org/packages/release/bioc/html/affy.html) package. 
+
+```{r}
 
 raw <-ReadAffy(celfile.path = "estrogen", filenames=rownames(pData(pd)),phenoData = pd)
 raw
 ```
 
 ******
-## Q  What type of Affy array is this
-## Q How many features?
-## Q How many samples?
+What type of Affy array is this
+How many features?
+How many samples?
 
 ******
 
@@ -99,33 +97,15 @@ The first diagnostic plot we will meet is the "[boxplot](https://en.wikipedia.or
 It is also common to draw whiskers that extend to 1.5 X the IQR from the lower and upper quartile. Any points outside this range can be represented by a dot.
 
 
-Lets say that we want to compare two distributions, x and y, which are stored in a *data frame*. The `boxplot` function is used in R to construct a boxplot from a data frame. A separate box is constructed from the distribution of each column. In this example plot, we see that the median of the second column in the data frame is higher. Moreover, the variance of the second is column is higher.
+In Bioconductor, you will usually find that package authors have created shortcuts to allow complicated data types to be visualised with common functions. For instance, if we want to construct a boxplot from our raw Affymetrix data it would be quite a daunting task for the novice to extract the revelant information from the object. Instead, we can use functions that we are familiar with such as `boxplot`. The plot can also be customised in ways that we are familiar with such as changing the color (the `col` argument) and label orientation (`las=2` to make labels perpendicular to the axis)
 
-
-```{r eval=FALSE}
-df <- data.frame(x,y)
-boxplot(df)
-```
-
-
-```{r echo=FALSE}
-df <- data.frame(x=rnorm(20),y=rnorm(20,2,2))
-df
-boxplot(df)
-summary(df)
-```
-
-***Being able to assess data distributions in this manner is important as parametric tests make certain assumptions about distribution.***
-
-In Bioconductor, you will usually find that package authors have created shortcuts to allow complicated data types to be visualised with common functions. For instance, if we want to construct a boxplot from our raw Affymetrix data it would be quite a daunting task for the novice to extract the revelant information from the object. Instead, we can use functions that we are familiar with. The boxplot can also be customised in ways that we are familiar with such as changing the color (the `col` argument) and label orientation (`las=2` to make labels perpendicular to the axis)
-
-```{r eval=FALSE}
+```{r}
 boxplot(raw,col="red",las=2)
 ```
 
 ******
 
-##Q What do you notice from this plot?
+### What do you notice from this plot?
 
 ******
 
@@ -135,12 +115,14 @@ boxplot(raw,col="red",las=2)
 With the short DNA sequences used for microarray hybridisation, there is the possibility for the sequence designed to not be specific-enough and hybridise to many regions of the genome. Affymetrix attempt to resolve this issue by having a mismatch sequence corresponding to each probe. Ideally, the subtracting the mismatch from the corresponding perfect match( $PM - MM$) should yield a background-corrected, and more-reliable, signal.
 
 
+******
 
 Generate histograms of the PM and MM intensities from the first array. Do you
 notice any difference in the signal distribution of the PMs and MMs?
 
+******
 
-```{r eval=FALSE}
+```{r}
 par(mfrow=c(2,1))
 hist(log2(pm(raw[,1])),breaks=100,col="steelblue",main="PM",xlim=c(4,14))
 hist(log2(mm(raw[,1])),breaks=100,col="steelblue",main="MM",xlim=c(4,14))
@@ -149,7 +131,7 @@ hist(log2(mm(raw[,1])),breaks=100,col="steelblue",main="MM",xlim=c(4,14))
 
 
 
-***M-A*** plots (sometimes called *bland-altman* plots in other fields) are a useful way of comparing the red and green channels from a two-colour
+***M-A*** plots are a useful way of comparing the red and green channels from a two-colour
 microarray. For Affymetrix data, which is a single-channel technology, M and A values can
 be calculated using the intensities from a pair of chips. We would typically produce a plot using samples from the same biological group, where we would not expect to observe much difference in intensity for a given gene.
 
@@ -158,17 +140,16 @@ probe from chip $i$ and X$_j$ is the intensity for the same probe on chip $j$, t
 $A = 1/2 (log_2(X_i) + log_2(X_j))$ and $M = log_2(X_i) − log_2(X_j)$ . In this experiment, there are 8 GeneChips, which gives
 28 distinct pair-wise comparisons between arrays. We will focus on a subset of these below.
 
-******
-
-##Q Make a pairs plot of the PM intensities from arrays 1-4 and 5-8 to compare the data from the replicate arrays. Based on all the plots you have generated, what would you conclude about the overall quality of this experiment? 
-## Q Would you use all the data in the downstream differential expression analysis?
-
-******
-
-```{r eval=FALSE}
+```{r}
 mva.pairs(pm(raw)[,1:4],plot.method="smoothScatter")
 mva.pairs(pm(raw)[,5:8],plot.method="smoothScatter")
 ```
+
+
+******
+### Based on all the plots you have generated, what would you conclude about the overall quality of this experiment? 
+******
+
 
 
 ## Probe-level Linear Models
@@ -180,7 +161,7 @@ an experiment in a robust way.
 The output is a matrix of residuals, or weights for each chip which can be used as an additional diagnostic; systematically high residuals across an entire array, or a large fraction of an array is indicative of an outlier array. The main use of this tool is in deciding whether or
 not to keep an array in the down-stream data analysis.
 
-```{r message=FALSE}
+```{r}
 library(affyPLM)
 plmset <- fitPLM(raw)
 NUSE(plmset,las=2)
@@ -190,7 +171,7 @@ RLE(plmset,las=2)
 
 We can look at the images of the array surface. Ocassionally this can reveal problems on the array. See this [gallery](http://plmimagegallery.bmbolstad.com/) of interesting examples. Affymetrix, and other older arrays are vunerable to spatial artefacts as the same probe set is found in the same location on each chip. 
 
-If you want to look at the array image, we can use the following code;
+If you want to look at an example of a bad array image, we can use the following code;
 
 ```{r}
 bad <- ReadAffy(celfile.path = "estrogen/",filenames="bad.cel")
@@ -199,7 +180,7 @@ image(bad)
 
 Try out some images for this dataset
 
-```{r eval=FALSE}
+```{r}
 par(mfrow=c(2,4))
 image(raw[,1])
 image(raw[,2])
@@ -211,6 +192,7 @@ image(raw[,7])
 image(raw[,8])
 ```
 
+
 - Do you see any problems?
 
 If we are happy with the quality of the raw data we can proceed to the next step. So far in the data, we have multiple probes within a probeset, and a perfect and mismatch measurement for each probe. These are not particular covenient values for statistical analysis as we would like a *single measurement* for each gene for each sample (/hybridisation). 
@@ -219,8 +201,7 @@ If we are happy with the quality of the raw data we can proceed to the next step
 
 Many normalisation and summarisation methods have been developed for Affymetrix
 data. These include MAS5.0 and PLIER which were developed by Affymetrix, and RMA,
-GC-RMA, dChip and vsn (to name but a few) which have been developed by academic re-
-searchers.
+GC-RMA, dChip and vsn (to name but a few) which have been developed by academic researchers.
 Many of these methods are available in the [affy](http://bioconductor.org/packages/release/bioc/html/affy.html) package. For a comparison of some of these
 methods and assessment of their performance on different control data sets, see [Bolstad et al](http://bioinformatics.oxfordjournals.org/content/19/2/185.long) or [Millenaar et al](http://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-7-137). In
 this practical we will use the ***RMA*** (Robust Multichip Averaging) method described in [Irizarry et al](http://www.ncbi.nlm.nih.gov/pubmed/12925520).
@@ -240,27 +221,12 @@ Procedure;
 - Easy option would to scale values for each array to median level
 
 - **What would happen if we had hybridised all the *estrogen-treated* samples on the first four arrays, and *un-treated* on the last four** - Could you analyse the data?
+![](images/linear-effects.png)
 
 
-```{r echo=FALSE,warning=FALSE,fig.height=4,fig.width=8}
-
-boxplot(raw,las=2)
-
-x <- raw
-         tmp <- unlist(indexProbes(x, which="both"))
-         tmp <- tmp[seq(1, length(tmp), len = 5000)]
-         df <- data.frame(log2(intensity(x)[tmp, ]))
-        med <- median(as.matrix(df))
-
-abline(h=med,lty=2,col="red")
-```
-
-## Simple scaling
-
-- Genes on array 2 are on average `r median(df[,2]) - med` higher than the global median, so subtract `r median(df[,2]) - med` from each gene
-- Genes on array 8 are on average `r abs(median(df[,8]) - med)` lower than the global median, so add `r abs(median(df[,8]) - med)` to each gene
+- Genes on array 2 are on average 2.6 lower than the global median, so add 2.6 to each gene
+- Genes on array 8 are on average 0.7 higher than the global median, so subtract 0.7 from each gene
 - etc
-
 
 
 
@@ -270,17 +236,7 @@ As we saw before The *MA-plot* is commonly-used in microarray analysis to common
 
 (***not our dataset***)
 
-```{r echo=FALSE,message=FALSE}
-library(beadarrayExampleData)
-data("exampleSummaryData")
-data <- channel(exampleSummaryData,"G")
-M <- exprs(data)[,1] - exprs(data)[,8]
-A <- 0.5*(exprs(data)[,1] + exprs(data)[,8])
-library(ggplot2)
-df <- data.frame(M,A)
-ggplot(df, aes(x = A,y=M)) + geom_point() + geom_smooth() + geom_hline(yintercept=0,col="red",lty=2)
-```
-
+![](images/non-linear.png)
 
 
 ## Quantile normalisation
@@ -290,51 +246,35 @@ This is arguably the most-popular normalisation method available. Consider the f
 ```{r echo=FALSE}
 # Set a seed to make sure we get the same matrix
 set.seed("15022016")
-df <- data.frame(Array1 = rnorm(5,mean = 2), Array2 = rnorm(5,mean=3), Array3 = rnorm(5,mean=4))
-rownames(df) <- LETTERS[1:nrow(df)]
-df
+raw.values <- round(data.frame(Array1 = rnorm(5,mean = 2), Array2 = rnorm(5,mean=3), Array3 = rnorm(5,mean=4)),2)
+rownames(raw.values) <- LETTERS[1:nrow(raw.values)]
+raw.values
 ```
-Genes A, B, C, D and E measured on three arrays
 
-
-
-Determine ranks of each column
-```{r echo=FALSE}
-df
-```
 
 ```{r echo=FALSE}
-rks <- apply(df, 2, function(x) paste("Rank",rank(x,ties.method="min"),sep=""))
-rks
+ranked.values <- apply(raw.values, 2, function(x) paste("Rank",rank(x,ties.method="min"),sep=""))
+ranked.values
 ```
-
-
 
 Sort each column Smallest...Largest
 
-Original data
-```{r echo=FALSE}
-df
-```
-***
 Sorted data
-```{r echo=FALSE}
-apply(df, 2,sort)
+```{r}
+apply(raw.values, 2,sort)
 ```
+
 Then calculate target distribution by averaging the sorted rows
 ```{r echo=FALSE} 
-target <- round(rowMeans(apply(df, 2,sort)),3)
+target <- round(rowMeans(apply(raw.values, 2,sort)),3)
 names(target) <- paste("Rank", 1:length(target),sep="")
 target
 ```
 
-
-
-
 Go back to the rank matrix
 
 ```{r echo=FALSE}
-rks
+ranked.values
 
 ```
 Substitute with values from the target distribution
@@ -342,106 +282,36 @@ Substitute with values from the target distribution
 target
 ```
 
-```{r echo=FALSE}
-rks[,1] <- gsub("Rank1",target["Rank1"],rks[,1])
-rks
+```{r}
+ranked.values[,1] <- gsub("Rank1",target["Rank1"],ranked.values[,1])
+ranked.values
+ranked.values[,1] <- gsub("Rank2",target["Rank2"],ranked.values[,1])
+ranked.values
+ranked.values[,1] <- gsub("Rank3",target["Rank3"],ranked.values[,1])
+ranked.values
+ranked.values[,1] <- gsub("Rank4",target["Rank4"],ranked.values[,1])
+ranked.values
+ranked.values[,1] <- gsub("Rank5",target["Rank5"],ranked.values[,1])
+ranked.values
 ```
 
 
-
-Go back to the rank matrix
-
-```{r echo=FALSE}
-rks
-
-```
-
-Substitue with values from the target distribution
-
-```{r echo=FALSE}
-target
-```
-
-```{r echo=FALSE}
-rks[,1] <- gsub("Rank2",target["Rank2"],rks[,1])
-rks
-```
-
-
-
-
-Go back to the rank matrix
-
-```{r echo=FALSE}
-rks
-
-```
-Substitue with values from the target distribution
-```{r echo=FALSE}
-target
-```
-
-```{r echo=FALSE}
-rks[,1] <- gsub("Rank3",target["Rank3"],rks[,1])
-rks
-```
-
-
-Go back to the rank matrix
-
-```{r echo=FALSE}
-rks
-
-```
-Substitue with values from the target distribution
-```{r echo=FALSE}
-target
-```
-
-```{r echo=FALSE}
-rks[,1] <- gsub("Rank4",target["Rank4"],rks[,1])
-rks
-```
-
-
-Go back to the rank matrix
-
-```{r echo=FALSE}
-rks
-
-```
-Substitue with values from the target distribution
-```{r echo=FALSE}
-target
-```
-
-```{r echo=FALSE}
-rks[,1] <- gsub("Rank5",target["Rank5"],rks[,1])
-rks
-```
-
-
-We then repeat to get the normalized matrix
-```{r echo=FALSE}
+```{r}
 for(i in 1:3){
-rks[,i] <- gsub("Rank1",target["Rank1"],rks[,i])
-rks[,i] <- gsub("Rank2",target["Rank2"],rks[,i])
-rks[,i] <- gsub("Rank3",target["Rank3"],rks[,i])
-rks[,i] <- gsub("Rank4",target["Rank4"],rks[,i])
-rks[,i] <- gsub("Rank5",target["Rank5"],rks[,i])
+ranked.values[,i] <- gsub("Rank1",target["Rank1"],ranked.values[,i])
+ranked.values[,i] <- gsub("Rank2",target["Rank2"],ranked.values[,i])
+ranked.values[,i] <- gsub("Rank3",target["Rank3"],ranked.values[,i])
+ranked.values[,i] <- gsub("Rank4",target["Rank4"],ranked.values[,i])
+ranked.values[,i] <- gsub("Rank5",target["Rank5"],ranked.values[,i])
 }
-rks <- as.data.frame(rks)
-rownames(rks) <- rownames(df)
+ranked.values <- as.data.frame(ranked.values)
+rownames(ranked.values) <- rownames(raw.values)
+
 ```
 
-Original data
-```{r echo=FALSE}
-df
-```
-Normalised data
-
-```{r echo=FALSE}
-rks
+```{r}
+raw.values
+ranked.values
 ```
 
 
@@ -451,17 +321,19 @@ The procedure can be encapsulated in relatively few lines of code
 
 ```{r eval=FALSE}
 
-rks <- apply(df, 2, function(x) paste("Rank",
+ranked.values <- apply(raw.values, 2, function(x) paste("Rank",
       rank(x,ties.method="min"),sep=""))
 target <- round(rowMeans(apply(df, 2,sort)),3)
 names(target) <- paste("Rank", 1:length(target),sep="")
-for(i in 1:ncol(df)){
+for(i in 1:ncol(raw.values)){
   for(nm in names(target)){
-    rks[,i] <- gsub(nm,target[nm],rks[,i])  
+    ranked.values[,i] <- gsub(nm,target[nm],ranked.values[,i])  
       }
 }
-norm <- as.data.frame(rks)
+norm <- as.data.frame(ranked.values)
 ```
+
+
 
 We can use the `normalizeQuantiles` function within the `limma` package to do the normalisation. 
 
@@ -480,17 +352,7 @@ library(limma)
 - loess or splines
     + need a reference or "average" array to compare 
     + estimate the curve and use to correct each point
-
-```{r echo=FALSE,message=FALSE}
-library(beadarrayExampleData)
-data("exampleSummaryData")
-data <- channel(exampleSummaryData,"G")
-M <- exprs(data)[,1] - exprs(data)[,8]
-A <- 0.5*(exprs(data)[,1] + exprs(data)[,8])
-library(ggplot2)
-df <- data.frame(M,A)
-ggplot(df, aes(x = A,y=M)) + geom_point() + geom_smooth() + geom_hline(yintercept=0,col="red",lty=2)
-```
+    
 
 ```{r}
 library(affy)
@@ -533,7 +395,7 @@ boxplot(exprs(eset),las=2)
 
 
 ******
-## Q How can you tell from the boxplot that these data have been normalised?
+### How can you tell from the boxplot that these data have been normalised?
 ******
 
 An MA-plot can be repeated on the normalised data to verify that the normalisation procedure has been sucessful.
@@ -553,23 +415,12 @@ rownames(pData(eset))
 ```
 
 
-Clustering techniques that we will meet later in the course can also inform decisions about experiment quality by providing a way of visualing relationships between sample groups.
+Clustering techniques and PCA that we will meet later in the course can also inform decisions about experiment quality by providing a way of visualing relationships between sample groups.
 
 
-```{r echo=FALSE}
-suppressPackageStartupMessages(library(genefilter))
-eset.filt <- varFilter(eset)
-corMat <- 1- cor(exprs(eset.filt))
-plot(hclust(as.dist(corMat)))
-```
+![](images/affy-clustering.png)
 
-```{r echo=FALSE}
-library(ggplot2)
-pca <- prcomp(exprs(eset))
-
-pd <- data.frame(pData(eset),pca$rotation)
-ggplot(pd, aes(x=PC1,y=PC2,col=estrogen,pch=as.factor(time.h))) + geom_point()
-```
+![](images/affy-pca.png)
 
 
 ## Automated QC
@@ -593,5 +444,4 @@ arrayQualityMetrics(eset)
     + `rma` (and variants thereof) is most-popular
 - Affy data can be summarised into a common Bioconductor object-type
     + The "`ExpressionSet`"
-
 

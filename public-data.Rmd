@@ -2,7 +2,10 @@
 title: "Importing publicly available data"
 author: "Mark Dunning; mark 'dot' dunning 'at' cruk.cam.ac.uk, Oscar Rueda; oscar 'dot' rueda 'at' cruk.cam.ac.uk"
 date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
-output: html_document
+output: 
+  html_notebook: 
+    toc: yes
+    toc_float: yes
 ---
 
 
@@ -85,7 +88,7 @@ mydata
 The structure of the `mydata` object should be quite familiar to you. The expression values can be retrieved by the `exprs` function. Here, we just print the first 5 rows and 5 columns. In total there are `r nrow(mydata)` rows (genes) and `r ncol(mydata)` columns (samples)
 
 ******
-## Q. What scale are the expression values recorded on? Is this an appropriate scale for analysis / visualisation?
+### What scale are the expression values recorded on? Is this an appropriate scale for analysis / visualisation?
 
 ******
 
@@ -96,12 +99,6 @@ summary(exprs(mydata)[,1:5])
 ```
 
 We can visualise the expression values for a particular gene by knowing which row of the expression matrix it is found in.
-
-```{r}
-exprs(mydata)[1,]
-fData(mydata)[1,1:8]
-```
-
 
 
 ## Example. Quality assessment of the downloaded data
@@ -117,12 +114,7 @@ The ***arrayQualityMetrics*** package can automatically-generate a variety of QA
 
 
 ******
-## Q. Generate an arrayQualityMetrics report for the dataset. Do any arrays seem to be poor quality?
-
-The report should be generated in a folder called `arrayQualityMetrics report for mydata` (the name of the directory can be configured).
-
-N.B the `force=TRUE` argument will make sure that the output gets written if the specified directory name already exists
-******
+### Generate an arrayQualityMetrics report for the dataset. Do any arrays seem to be poor quality?
 
 ```{r message=FALSE,cache=TRUE,warning=FALSE}
 library(arrayQualityMetrics)
@@ -130,34 +122,31 @@ arrayQualityMetrics(mydata, force=TRUE)
 ```
 
 
-We can remove samples from our `ExpressionSet` object using the same subsetting rules that apply when removing columns from a matrix or data frame. Consider the following example; whereas `a[,1]` prints the first column, `a[,-1]` prints the matrix with all columns *except* the first one.
+The report should be generated in a folder called `arrayQualityMetrics report for mydata` (the name of the directory can be configured).
 
-```{r}
-a <- matrix(rnorm(100),ncol=10)
-colnames(a) <- LETTERS[1:10]
-a[,1]
-a[,-1]
-```
+N.B the `force=TRUE` argument will make sure that the output gets written if the specified directory name already exists
 
-The same technique applies to vectors with more than one element
+******
 
-```{r}
-a[,c(1,10)]
-a[,-c(1,10)]
-```
 
-The `ExpressionSet` object has been design to respect these same subsetting rules, even though it is an inherently more-complicated object.
+An `ExpressionSet` object obeys the same subsetting rules that apply to a standard matrix or data frame in R. 
 
-In the following we create a new object that represents the first four *samples* in the object. This is especially neat, as it creates a subset of the expression matrix and phenotypic data in the same operation. At the same time, the number of genes is not affected. 
+- We can subset rows and columns using the square bracket notation
+- Remembering that we need to specify both the row and column index separated by a `,`
+    + one of these indices can be omitted if we want all rows or all columns
 
+Here we create a subset that is just the first four arrays
+
+- This works nicely as all the components of the object (expression values, metadata and features) all get subset
 
 ```{r}
 subset <- mydata[,1:4]
 dim(exprs(subset))
 dim(pData(subset))
+dim(fData(subset))
 ```
 
-Consequently, to *remove* the first four samples, we could do;
+Similarly, to *remove* the first four samples, we could do;
 
 ```{r}
 subset <- mydata[,-c(1,4)]
@@ -168,12 +157,12 @@ So in order to remove one or more poor-quality arrays we need to know their indi
 
 
 ******
-## Q. Now create a new dataset with the poor quality arrays removed
+### Now create a new dataset with the poor quality arrays removed
 
 ******
 
 
-Finally, when creating a subset of an `ExpressionSet` object, we can also filter on rows. e.g. to select the first 100 genes.
+When creating a subset of an `ExpressionSet` object, we can also filter on rows. e.g. to select the first 100 genes.
 
 ```{r}
 subset <- mydata[1:100,]
@@ -198,10 +187,11 @@ features <- fData(mydata)
 ```
 
 
-Recall that a particular column from the feature matrix can be retrieved using the `$` syntax. The results will be a vector with a length corresponding to the number of genes in the experiment (in this case `r nrow(fData(mydata))`). So take care if running this line of code! We probably won't want to print all IDs to the screen, but we may wish to save as a variable in further analysis.
+Recall that a particular column from the feature matrix can be retrieved using the `$` syntax. The results will be a vector with a length corresponding to the number of genes in the experiment (in this case `r nrow(fData(mydata))`). 
 
 ```{r eval=FALSE}
 colnames(features)
+features$ID[1:10]
 ```
 
 
@@ -209,9 +199,18 @@ colnames(features)
 
 ## Exercise
 
-- How many unique Entrez gene IDs are there? HINT: there is a function called `unique`....
-- How many features do not have an associated Entrez ID? HINT: how is a probe without an Entrez ID represented in the vector?
+- How many unique Entrez gene IDs are there? 
+    + HINT: there is a function called `unique`....
+- How many features do not have an associated Entrez ID? 
+    + HINT: how is a probe without an Entrez ID represented in the vector?
+    
+    
 ******
+```{r}
+
+## Your answer here ##
+
+```
 
 
 
@@ -231,7 +230,9 @@ features[which(features$`Gene Symbol` == "TP53"),]
 features[match("TP53", features$`Gene Symbol`),]
 ```
 
-Briefly; `grep` will return all rows that have "TP53" *somewhere* in the gene symbol, `which` combined with `==` returns all rows that exactly match, and `match` returns just the first match.
+- `grep` will return all rows that have "TP53" *somewhere* in the gene symbol, 
+- `which` combined with `==` returns all rows that exactly match,
+- match` returns just the first match.
 
 You'll probably want to use `which(features$"Gene Symbol" == TP53`)`, which in this example returns two rows.
 
@@ -273,6 +274,8 @@ cor(E[1274,],E[10723,])
 
 If we want to include information about the samples on the plot (e.g. clinical variables), then we need to look at how these data are represented in the `ExpressionSet` object. This follows in the next section.
 
+## Which probe to use for a given Gene?
+
 Finally, when deciding which probe to use in the analysis, we could use some of the feature information stored in the `mydata` object. For instance, one probe might represent specific transcript forms of the gene, whereas the other might be more specific.
 
 Another approach would be to use the variability of the probe as a measure of how *informative* it is in the study. The `IQR` (`?IQR`) function can compute this.
@@ -286,7 +289,7 @@ IQR(E[10723,])
 
 
 
-## Example. Dealing with large cohorts
+# GEO Example. Dealing with large cohorts
 
 For this second example, we will import a patient cohort
 ```{r}
@@ -324,16 +327,18 @@ pd[1:4,10:16]
 
 ******
 
-Q. How many males and females are there in the study?
-Q. How many of the patients relapsed?
+### How many males and females are there in the study?
+### How many of the patients relapsed?
 
 ******
 
-```{r echo=FALSE}
-table(pd$characteristics_ch1.1)
-table(pd$characteristics_ch1.2)
+```{r }
+
+## Your answer here ## 
+
 ```
 
+## Incorporating metadata into the analysis
 
 This cateogorical information can be used in our analysis.
 
@@ -355,7 +360,8 @@ plot(density(subset[1,]))
 A boxplot using the gender of the samples is very informative
 
 ```{r}
-boxplot(subset[1,]~pd$characteristics_ch1.1)
+gender <- pd$characteristics_ch1.1
+boxplot(subset[1,]~gender)
 ```
 
 The pattern is repeated for the other probes
@@ -364,14 +370,44 @@ The pattern is repeated for the other probes
 
 ```{r}
 par(mfrow=c(2,4))
-boxplot(subset[1,]~pd$characteristics_ch1.1,las=2)
-boxplot(subset[2,]~pd$characteristics_ch1.1,las=2)
-boxplot(subset[3,]~pd$characteristics_ch1.1,las=2)
-boxplot(subset[4,]~pd$characteristics_ch1.1,las=2)
-boxplot(subset[5,]~pd$characteristics_ch1.1,las=2)
-boxplot(subset[6,]~pd$characteristics_ch1.1,las=2)
-boxplot(subset[7,]~pd$characteristics_ch1.1,las=2)
-boxplot(subset[8,]~pd$characteristics_ch1.1,las=2)
+boxplot(subset[1,]~gender,las=2)
+boxplot(subset[2,]~gender,las=2)
+boxplot(subset[3,]~gender,las=2)
+boxplot(subset[4,]~gender,las=2)
+boxplot(subset[5,]~gender,las=2)
+boxplot(subset[6,]~gender,las=2)
+boxplot(subset[7,]~gender,las=2)
+boxplot(subset[8,]~gender,las=2)
+```
+
+The boxplot provides a nice visualisation of the difference between the groups of interest. For a quick-and-dirty assessment of whether this difference is statistically signficant we could use the standard `t.test` function. 
+
+- However, as we will see in subsequent sections, more sophisticated approaches are required.
+
+```{r}
+t.test(subset[1,]~gender)
+```
+
+
+# Summary
+
+If we wanted to query a particular gene in our dataset and know if it exhibits a difference between a biological condition of interest
+
+- Find the url of the dataset on GEO
+- Create a Bioconductor object using the `getGEO` function in `GEOquery`
+- Locate the rows corresponding to the gene
+- Find which column in the metadata contains the condition of interest
+- Make a boxplot with the expression values of the genes as the `x` variable, and biological condition as the `y` variable
+
+```{r}
+remotefile <- 'ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE18nnn/GSE18088/matrix/GSE18088_series_matrix.txt.gz'
+destfile <- "data/GSE18088_series_matrix.txt.gz"
+if(!file.exists(destfile)) download.file(remotefile, destfile)
+cohort <- getGEO(filename="data/GSE18088_series_matrix.txt.gz")
+
+
+
+
 ```
 
 ## Example: Extra manipulation of the clinical data
