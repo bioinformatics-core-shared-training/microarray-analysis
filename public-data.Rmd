@@ -73,9 +73,7 @@ mydata[[1]]
 ```
 
 
-***The recommended approach*** is to download to disk first. On the [page](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE1729) for the dataset you should see there is a link to the **Series Matrix File(s)**. You can copy and paste this link into R and use the `download.file` function to get data from the URL to disk. GEOquery is then able to read from this file in future using the filename argument. 
-
-Advantage is that you don't need an internet connection to run your script
+***The recommended approach*** is to download to disk first. On the [page](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE1729) for the dataset you should see there is a link to the **Series Matrix File(s)**. You can copy and paste this link into R and use the `download.file` function to get data from the URL to disk. `GEOquery` is then able to read from this file in future using the filename argument. The advantage is that you don't need an internet connection to run your script, or wait for large files to download.
 
 ```{r cache=TRUE}
 remotefile <- 'ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE1nnn/GSE1729/matrix/GSE1729_series_matrix.txt.gz'
@@ -161,6 +159,14 @@ So in order to remove one or more poor-quality arrays we need to know their indi
 
 ******
 
+```{r}
+
+## Your code here ##
+
+
+```
+
+
 
 When creating a subset of an `ExpressionSet` object, we can also filter on rows. e.g. to select the first 100 genes.
 
@@ -182,6 +188,7 @@ all(rownames(fData(mydata)) == rownames(exprs(mydata)))
 
 Although this is an Affymetrix experiment, the `annotation` is set to `r annotation(mydata)`, which is the GEO identifier for this paticular platform. All experiments in GEO run on this platform get annotated with the same table (a *SOFT* file). During the process of importing the dataset, `GEOquery` will automatically download this *SOFT* file for you.
 
+To save some typing, we will save the features data to a new variable
 ```{r}
 features <- fData(mydata)
 ```
@@ -249,7 +256,7 @@ E[1274,]
 E[10723,]
 ```
 
-Having the expression values available as a vector allows us to access the plotting and transformation facilities in R. If we plot either of these vectors that we extract in the previous piece of code, we plot the expression level of the probe on the $y$ axis, and the array index on the $x$ axis.
+Having the expression values available as a vector allows us to access the plotting and statistical functions in R. If we plot either of these vectors that we extract in the previous piece of code, we plot the expression level of the probe on the $y$ axis, and the array index on the $x$ axis.
 
 
 ```{r}
@@ -287,9 +294,29 @@ IQR(E[1274,])
 IQR(E[10723,])
 ```
 
+The `genefilter` package in Bioconductor provides several methods to assist in the filtering of microarray data based on a lack of annotation or low variation. However, in order to use the package we first have to re-set the value of the annotation currently stored with the object. 
+
+```{r message=FALSE}
+library(genefilter)
+annotation(mydata) <- "hgu133a"
+```
+
+******
+
+## Exercise
+- Use the `nsFilter` function to filter the `ExpressionSet` object `mydata`
+- How many probes remain after filtering?
+    + does it seem a bit harsh? what options are available for customising the filter
+    
+```{r}
+## Your answer here ##
+
+```
 
 
-# GEO Example. Dealing with large cohorts
+******
+
+# GEO Example. Dealing with large cohorts with clinical data
 
 For this second example, we will import a patient cohort
 ```{r}
@@ -307,12 +334,21 @@ head(exprs(cohort)[,1:5])
 head(fData(cohort)[,1:5])
 ```
 
-But an extra feature of this dataset is the availability of clinical information
+And as always, check the distribution of the samples
+
+```{r}
+boxplot(exprs(cohort),outline=FALSE)
+```
+
+
+An extra feature of this dataset is the availability of clinical information
 
 ```{r}
 pData(cohort)[1:5,1:5]
 colnames(pData(cohort))
 ```
+
+As we did with the gene annotation in the previous example, we can save the metadata as an object to save some typing.
 
 ```{r}
 pd <- pData(cohort)
@@ -326,11 +362,12 @@ pd[1:4,10:16]
 ```
 
 ******
+Exercise: 
 
-### How many males and females are there in the study?
-### How many of the patients relapsed?
+- How many males and females are there in the study?
+- How many of the patients relapsed?
 
-******
+*****
 
 ```{r }
 
@@ -349,7 +386,8 @@ rows <- which(fData(cohort)$"Gene Symbol" == "XIST")
 rows
 ```
 
-If we take just the first probe, it clearly exhibits bi-modal behaviour.
+The vector that we have just created,`rows`, can be used to subset the expression matrix. If we plot the expression values corresponding to the first probe, it clearly exhibits bi-modal behaviour.
+
 ```{r}
 subset <- exprs(cohort)[rows,]
 dim(subset)
@@ -357,14 +395,21 @@ plot(subset[1,])
 plot(density(subset[1,]))
 ```
 
-A boxplot using the gender of the samples is very informative
+Up to this point, we have been using the `boxplot` function to visualise the distribution of a matrix of expression values. In fact, the `boxplot` function is versatile and can accept different types of data as input.
+
+A common way of creating a `boxplot` is using the *formula* syntax in R. Also used in statistics (and linear modelling in particular) we can specify a *response* and predictor variable. In the case of our analysis, we are looking to see if the gene expression level of a particular gene can be explained by a categorical variable (e.g. gender). 
+
+To produce a boxplot of the gene expression of a particular gene as a function of Gender we use:-
+
+- Note that the order of categories on the boxplot is determined by alphabetical order
+    + for how to change this, see the note in the Appendix below
 
 ```{r}
 gender <- pd$characteristics_ch1.1
 boxplot(subset[1,]~gender)
 ```
 
-The pattern is repeated for the other probes
+The boxplot is produce for the first probe only. We can repeat for other probes by altering the index of `subset`. The `gender` vector is the same for every line of code.
 
 ***N.B. we haven't discussed looping in R yet, so here is the long-hand way to produce these plots***
 
@@ -409,6 +454,14 @@ cohort <- getGEO(filename="data/GSE18088_series_matrix.txt.gz")
 
 
 ```
+
+
+
+
+
+
+
+# Appendix
 
 ## Example: Extra manipulation of the clinical data
 
@@ -456,9 +509,16 @@ sex <- substr(clinvars$characteristics_ch1.1,9,nchar(as.character(clinvars$chara
 sex
 ```
 
+## Changing the plotting order in a boxplot
 
+```{r}
+gender <- pd$characteristics_ch1.1
+gender <- factor(gender, levels = c("gender: male", "gender: female"))
+gender
+boxplot(subset[1,]~gender)
 
-# Appendix
+```
+
 
 ## Supplementary data from GEO
 
