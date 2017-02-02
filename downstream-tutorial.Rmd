@@ -15,7 +15,7 @@ library(limma)
 
 # Description
 
-The tutorial covers the application of a number of techniques to real-life microarray experiments
+The tutorial covers the application of a number of exploratory analysis techniques to real-life microarray experiments
 
 - Clustering
     + and making a heatmap
@@ -28,19 +28,20 @@ The tutorial covers the application of a number of techniques to real-life micro
 
 We will re-use the colon cancer data in GSE33126, and saw yesterday how to import these data into R.
 
-```{r cache=TRUE}
+```{r cache=TRUE,message=FALSE}
 library(GEOquery)
 url <- "ftp://ftp.ncbi.nih.gov/pub/geo/DATA/SeriesMatrix/GSE33126/"
 filenm <- "data/GSE33126_series_matrix.txt.gz"
-if(!file.exists("GSE33126_series_matrix.txt.gz")) download.file(paste(url, filenm, sep=""), destfile=filenm)
+if(!file.exists(filenm)) download.file(paste(url, filenm, sep=""), destfile=filenm)
 colonData <- getGEO(filename=filenm)
 colonData
 ```
 
+We will log$_2$ transform the expression data
+
 ```{r}
 exprs (colonData) <- log2 (exprs(colonData))
-SampleGroup <- pData(colonData)$source_name_ch1
-Patient <- pData(colonData)$characteristics_ch1.1
+boxplot(exprs(colonData),outline=FALSE)
 ```
 
 ## Filtering the data
@@ -48,8 +49,8 @@ Patient <- pData(colonData)$characteristics_ch1.1
 A first step in the analysis of microarray data is often to remove any uniformative probes.
 We can do this because typically only 50% of probes genes will be expressed, and even fewer
 than this will be differentially expressed. Including such non-informative genes in visualisa-
-tion will obscure any biological differences that exist. The genefilter package contains a suite
-of tools for the filtering of microarray data. The varFilter function allows probes with low-
+tion will obscure any biological differences that exist. As we saw yesterday, the `genefilter` package contains a suite
+of tools for the filtering of microarray data. The `varFilter` function allows probes with low-
 variance to be removed from the dataset. The metric using to decide which probes to remove
 is the Inter-Quartile Range (IQR), and by default half of the probes are removed. Both the
 function used to do the filtering, and cut-off can be specified by the user.
@@ -87,7 +88,7 @@ nrow (colonData) / nrow (varFiltered)
 ### Subtype Discovery    
 - There are plenty of examples of using clustering to discover subtypes in the literature
 
-![perou](images/perou.png)
+![Perou et al. Molecular portraits of human breast tissues](images/perou.png)
 
 ### Clustering as QA
 
@@ -117,9 +118,11 @@ When clustering genes, it is common to pre-process;
 
 - normalise
 - filter; remove genes with low variability across samples and many missing values
-- (impute missing values)
+- (possibly impute missing values)
 - standardise; e.g. zero-mean and, unit variance:
     + $y_g^* = (y_g - \mu_g)/\sigma_g$
+    + subtracting the mean expression level and divide by standard deviation
+    + the algorithm may already do this
     
 ### How to compute similarity
 Common *Similarity* / *Dissimilarity* measures include
@@ -145,13 +148,11 @@ The `dist` function can be used to calculate a variety of similarity measures
 - As usual, we can do `?dist`. 
 - The input is a matrix of numerical values
 - Let's test with some sample data
-
-```{r echo=FALSE}
-set.seed(10032016)
-```
+    + we use `set.seed` here to make sure we always get the same values
 
 
 ```{r}
+set.seed(10032016)
 myMatrix <- matrix(rnorm(1000),ncol=10)
 colnames(myMatrix) <- LETTERS[1:10]
 head(myMatrix)
@@ -161,8 +162,7 @@ head(myMatrix)
 
 - The default is to compute distances from the *rows* of the matrix
     + i.e. which would normally be the genes we are measuring
-- Also note that the matrix has some values that appear to be missing
-    + why do you think that might be?
+
 
 ```{r eval=FALSE}
 d <- dist(myMatrix)
@@ -173,7 +173,9 @@ d
 
 - The more common use of clustering is to cluster the columns (*samples*)
 - To do this, we have to *transpose* the matrix; using the function `t`
-
+- Note that the matrix has some values that appear to be missing
+    + why do you think that might be?
+    
 ```{r}
 d <- dist(t(myMatrix))
 d
@@ -182,6 +184,7 @@ d
 
 
 - Changing the type of distance measure can be done by changing the `method` argument
+    + as always, check the help page for full list of options `?dist`
 
 ```{r}
 d.man <- dist(t(myMatrix),method="manhattan")
@@ -191,6 +194,8 @@ d.man
 ### How to calculate correlation in R
 
 - This time we use the `cor` function to calculate correlation(`?cor`)
+- What type of correlation is this computing?
+    + use the help page to find out
 - What do you notice about the output, compared to that of `dist`?
 
 ```{r}
@@ -199,6 +204,7 @@ cor(myMatrix)
 
 - Clustering algorithms will expect input in distance matrix form
 - We can convert using `as.dist`
+    + recall that various `as.` functions exist to convert between various types of data. e.g. `as.numeric`, `as.character` etc
 
 ```{r}
 corMat <- as.dist(cor(myMatrix))
@@ -207,7 +213,7 @@ corMat
 
 - Two samples with a *higher correlation* values means *more similar*
 - ...so the *distance* between is *less*
-
+    + `abs` will calculate the absolute value
 
 ```{r}
 corMat <- as.dist(1-abs(cor(myMatrix)))
@@ -217,42 +223,15 @@ corMat
 
 ### Correlation versus Distance
 
+- The main choice is whether to use a distance-based metric (e.g. Euclidean) or correlation
 - A simple toy example of three genes
     + which genes seem to be closest?
 
 ![](images/cor-vs-dist.png)
 
-
-- Using Euclidean distance
-
-```{r echo=FALSE}
-gene2 <- c(-1, -0.5, 0.3, -0.4,0.7,0.9, 1.1,0.8,1.5,1.3)
-gene1 <- gene2+2
-gene3 <- gene1 + runif(10,min = -0.4,0.4)
-
-geneMatrix <- rbind(gene1,gene2,gene3)
-dist(geneMatrix)
-```
-
-- Correlation matrix
-
-```{r echo=FALSE}
-cor(t(geneMatrix))
-par(mfrow=c(1,2))
-plot(hclust(dist(geneMatrix)),main="Distance = Euclidean")
-plot(hclust(as.dist(1-cor(t(geneMatrix)))),main="Distance = Correlation")
-
-```
-
-
-
 ## Calculating a distance matrix for gene expression data
 
-The first step towards clustering the data is to construct a distance matrix. Each entry in
-this matrix is the pairwise distance between two samples. Note that for expression data we have to transpose the standard `ExpressionSet` format, as clustering is designed to work on
-rows rather than columns. The standard function to make a distance matrix in R is `dist`
-which uses the euclidean metric. As the data entries in a distance matrix are symmetrical, it
-has a different representation to the default matrix (i.e. values are not repeated unnecessarily), and clustering algorithms are able to accept this representation as input.
+When clustering samples, each entry in the distance matrix should be the pairwise distance between two samples. As the `ExpressionSet` object has genes in the rows, and samples in the column we have to transpose the expression matrix.
 
 **N.B. to calculate the distances between samples, we have to transpose the expression matrix (e.g. using the function `t`). If we do not do this, R will try and compute distances between all genes which may take a long time or exceed the available memory)**
 
@@ -262,12 +241,11 @@ euc.dist
 ```
 
 For gene-expression data, it is common to use correlation as a distance metric rather than
-the Euclidean. You should make sure that you know the difference between the two metrics.
-The `cor` function can be used to calculate the correlation of columns in a matrix. Each row
+the Euclidean. As we saw above, the `cor` function can be used to calculate the correlation of columns in a matrix. Each row
 (or column) in the resulting matrix is the correlation of that sample with all other samples
 in the dataset. The matrix is symmetrical and we can transform this into a distance matrix
 by first subtracting 1 from the correlation matrix. Hence, samples with a higher correlation
-have a smaller ’distance’.
+have a smaller 'distance'.
 
 
 ```{r}
@@ -283,7 +261,7 @@ cor.dist <- as.dist(1 - abs(corMat))
 ```
 
 
-
+We are now ready to use a clustering method.
 
 
 ## Hierachical methods for clustering
@@ -294,11 +272,13 @@ cor.dist <- as.dist(1 - abs(corMat))
 
 
 
-![the-algorithm](images/hierarichal-alg.png)
+![](images/hierarichal-alg.png)
 
+- We also have some control over the definition of distance used when creating a new cluster
+    + this will alter the *shape* of the dendrogram
+    + some methods will give more compact clusters
 
-
-![between-clusters](images/distance-metrics.png)
+![](images/distance-metrics.png)
 
 
 
@@ -306,7 +286,7 @@ cor.dist <- as.dist(1 - abs(corMat))
 - Nodes can be reordered
     + Closer on dendrogram $\ne$ more similar
 
-![hierarchical](images/cluster-caution.png)
+![](images/cluster-caution.png)
 
 
 
@@ -344,6 +324,7 @@ plot(clust.ward)
 
 ******
 Exercise:
+
 - Apply hierachical clustering to the Eucliden and Correlation distance matrices from the Colon Cancer data that you computed previously
 - Do you see the same clustering arising from the different distance matrices?
 
@@ -357,6 +338,8 @@ Exercise:
 
 The default plotting for a dendrogram labels the "leaves" with the column names from the input matrix, in our case the sample names from GEO. This may make the interpretation of the dendrogram difficult, as it may not be obvious which sample group each sample belongs to. We can alter the appearance of the dendrogram so that sample groups appear in the labels.
 
+- Can use the `labels` argument to specify a vector that you want to use to label each leaf
+    + the vector must be in the same order as the columns in the matrix that you did clustering on
 
 ```{r}
 groups <- c(rep("Group1", 5),rep("Group2", 5))
@@ -367,17 +350,23 @@ plot(clust.ward)
 
 ```
 
-It is helpful to think of the dendrogram as a mobile that you might see hanging in a child's nursery. 
-![mobile](images/stock-illustration-64779351-hanging-baby-mobile-sculpture-stars-and-moon-drawing.jpg)
-
-
-
 ******
 Exercise:
-- Add text labels to indicate which sample group each sample belongs to
+
+- Add text labels to indicate which sample group (tumour or normal) that each sample belongs to
+    + below is a reminder of how to retrieve a matrix with all the sample metadata
     + does the clustering make sense in relation to the sample groups in the experiment? 
     + do any samples appear incorrectly clustered?
+    
+    
+    
 ******
+```{r}
+pd <- pData(colonData)
+View(pd)
+## Your answer here ##
+
+```
 
 The `WGCNA` package in Bioconductor provides methods for finding clusters of correlated genes, which we will not be looking at in this tutorial. However, the package is of interest as it provides other visualisation methods for dendrograms which allows colours to be overlaid to distinguish sample groups.
 
@@ -389,7 +378,7 @@ library(WGCNA)
 ```{r}
 clust.euclid = hclust(euc.dist)
 clust.cor = hclust (cor.dist)
-
+SampleGroup <- pData(colonData)$source_name_ch1
 groupColours <- as.factor(SampleGroup)
 levels(groupColours) <- c ("yellow" , "blue")
 plotDendroAndColors(clust.euclid,colors=groupColours)
@@ -400,15 +389,15 @@ plotDendroAndColors(clust.euclid,colors=groupColours)
 
 ## Extracting data from the clustering
 
-If we want to interpret the data presented in a clustering analysis, we need a way of extract-
-ing which samples are grouped together, or to determine the optimal grouping of samples.
-One intuitive way of assigning groups it to ’cut’ the dendrogram at a particular height on
-the y-axis. We can do this manually on the plot, or use the `cutree` function to return the
-labels of samples that are belong to the same group when the dendrogram is cut at the specified height, `h`. Alternatively, we can specify how many groups, `k`, that we want to create.
+If we want to interpret the data presented in a clustering analysis, we need a way of extracting which samples are grouped together, or to determine the optimal grouping of samples.
+
+- One intuitive way of assigning groups it to *cut* the dendrogram at a particular height on the y-axis. 
+- We can do this manually on the plot, or use the `cutree` function to return the
+labels of samples that are belong to the same group when the dendrogram is cut at the specified height, `h`. 
+- Alternatively, we can specify how many groups, `k`, that we want to create.
 
 ```{r}
 library (cluster)
-par (mfrow = c(1 , 1))
 plot(clust.cor)
 abline (h = 0.12, col = " red ")
 cutree (clust.cor , h = 0.12)
@@ -416,84 +405,7 @@ cutree (clust.cor , k = 2)
 table (cutree(clust.cor , k = 3) , SampleGroup)
 ```
 
-A Silhouette plot can be used to choose the optimal number of clusters. For each sample, we
-calculate a value that quantifies how well it ’fits’ the cluster that it has been assigned to. If
-the value is around 1, then the sample closely fits other samples in the same cluster. How-
-ever, if the value is around 0 the sample could belong to another cluster. In the silhouette
-plot, the values for each cluster are plotted together and ordered from largest to smallest.
-The number of samples belonging to each group is also displayed.
 
-```{r}
-par (mfrow = c (2 , 2))
-plot (silhouette(cutree(clust.cor, k=2),cor.dist),
-      col="red",main=paste("k=",2))
-plot (silhouette(cutree(clust.cor, k=3),cor.dist),
-      col="red",main=paste("k=",3))
-plot (silhouette(cutree(clust.cor, k=4),cor.dist),
-      col="red",main=paste("k=",4))
-plot (silhouette(cutree(clust.cor, k=5),cor.dist),
-      col="red",main=paste("k=",5))
-```
-
-
-If we have prior knowledge of how many clusters to expect, we could run the clustering in a
-supervised manner. The ***Partition Around Medioids*** method can be used to group samples
-into k clusters.
-
-```{r}
-pam.clus <- pam (euc.dist , k = 2)
-clusplot (pam.clus)
-pam.clus$clustering
-table(pam.clus$clustering , SampleGroup)
-```
-
-
-
-- Two useful functions are `cutree` and `rect.hclust`
-- Can be used to "cut" the dendrogram at a particular height
-
-```{r}
-par(mfrow=c(1,1))
-plot(clust)
-cutree(clust, h=16)
-rect.hclust(clust, h=16)
-```
-
-
-- Alternatively, we can see the number of clusters; *k*
-- Try experimenting with different values of k....
-
-```{r}
-plot(clust)
-cutree(clust, k=2)
-rect.hclust(clust, k=2)
-```
-
-
-### What is the optimal number of clusters?
-
-- A measure called the ***silhouette width*** can be computed.
-- The silhouette measures how well-matched an object is to others in it's own cluster, versus how well-matched it would be if it were moved to the next closest cluster
-- Value around 0 -> a gene lies between two clusters
-- Value of -1 -> gene is similar to element in neighbour cluster and probably in the wrong cluster
-- Value of around 1 -> good clustering
-- Output from `silhouette` function for the gene expression example earlier
-
-```{r echo=FALSE}
-library(cluster)
-d <- dist(t(exprs(data.noout)))
-par(mfrow=c(1,2))
-pr <- pam(d, 2)
-si4 <- silhouette(pr)
-par(mfrow=c(1,2))
-plot(hclust(d))
-rect.hclust(hclust(d),k=2)
-plot(si4, col = c("red", "blue"),main="")# with cluster-wise coloring
-
-```
-
-    
-    
 ## Summary of clustering
 
 - Useful as ***exploratory / visualisation*** tools
@@ -508,41 +420,111 @@ plot(si4, col = c("red", "blue"),main="")# with cluster-wise coloring
 - Quality assessment of samples
       + checking for batch effects and outliers
       + check effectiveness of normalisation / transformation
+      
+      
 ## Producing a heatmap
 
-A heatmap is often used to visualise differences between samples. Each row represents a
-gene and each column is an array and coloured cells indicate the expression levels of genes.
-Both samples and genes with similar expression profile are clustered together. By default,
-euclidean distances are used with complete linkage clustering.
-Drawing a heatmap in R uses a lot of memory and can take a long time, therefore reducing the amount of data to be plotted is usually recommended. Including too many non-
-informative genes can also make it difficult to spot patterns. Typically, data are filtered to
-include the genes which tell us the most about the biological variation. In an un-supervised
-setting, the selection of such genes is done without using prior knowledge about the sample
-groupings.
+A heatmap is often used to visualise differences between samples. 
+
+- Each row represents a gene and each column is an array and coloured cells indicate the expression levels of genes.
+- Both samples and genes with similar expression profile are clustered together. 
+- The code to draw the heatmap is actually quite straighforward
+    + the trick is to select what genes to use
+
+Drawing a heatmap in R uses a lot of memory and can take a long time, 
+
+- Reducing the amount of data to be plotted is usually recommended. 
+- Including too many non-informative genes can also make it difficult to spot patterns. 
+- Typically, data are filtered to include the genes which tell us the most about the biological variation. 
+    + alternatively, use a pre-selected list of genes of interest
+    + e.g. a particular pathway, or gene-list from another study
+- In an un-supervised setting, the selection of such genes is done without using prior knowledge about the sample groupings.
+- The `rowSds` function from `genefilter` provides a convenient way of calculating the variability of each gene
 
 ```{r}
-IQRs = apply (exprs(varFiltered) , 1 , IQR )
-highVarGenes = order (IQRs, decreasing = T )[1:100]
-Symbols <- as.character(fData(colonData)$Symbol[highVarGenes])
-heatmap (as.matrix(exprs(varFiltered)[highVarGenes, ]),
-         labCol = SampleGroup , labRow = Symbols)
+geneVar = rowSds(exprs(colonData))
+sd(exprs(colonData)[1,])
+geneVar[1]
+sd(exprs(colonData)[2,])
+geneVar[2]
+length(geneVar)
+```
+
+Next we can select which genes have the highest variance (say the top 100+)
+
+```{r}
+highVarGenes = order (geneVar, decreasing = TRUE )[1:100]
+```
+
+- A basic heatmap can now be constructed by selecting the appropriate rows from the expression matrix
+    + the `heatmap` function expects a `matrix` object, so we have to convert
+
+```{r}
+heatmap (as.matrix(exprs(colonData)[highVarGenes, ]))
+```
+
+## Customising the heatmap
+
+From this plot we can already to discern patterns in the data
+
+- However, the rows are named according to the row names in the expression matrix
+    + which in this case are manufacturer identifiers and do not help the interpretation
+    + also, we have sample names without any information of the sample groupings.
+- The column labels can be changed by specifying the `labCol` argument    
+    
+    
+    
+```{r}
+heatmap (as.matrix(exprs(colonData)[highVarGenes, ]),
+         labCol = SampleGroup)
+```
+
+In a similar way to adding colours to a dendrogram
+
+```{r}
+sampleColours <- matrix(nrow=length(SampleGroup),ncol=1)
+sampleColours[,1] <- as.character(groupColours)
+heatmap (as.matrix(exprs(colonData)[highVarGenes, ]),
+         labCol = SampleGroup,
+         ColSideColors = sampleColours)
 
 ```
 
-The default options for the heatmap are to cluster both the genes (rows) and samples (columns).
-However, sometimes we might want to specify a particular order. For example, we might
-want to order the columns according to sample groups. We can do this by re-ordering the
-input matrix manually and setting the `Colv` argument to `NA`. This tells the heatmap function not be
-cluster the columns. 
+
+******
+Exercise:
+
+- How can we add gene names to the heatmap?
+    + first out which column in the feature data corresponds to gene symbol
+    + save this as a vector
+    + find out which argument to heatmap you need to change
+    
+******
+
+    
+```{r}
+
+features <- fData(colonData)
+View(features)
+
+## Your answer here ##
+
+```
+
+
+- The default options for the heatmap are to cluster both the genes (rows) and samples (columns).
+- However, sometimes we might want to specify a particular order. For example, we might
+want to order the columns according to sample groups. 
+- We can do this by re-ordering the input matrix manually and setting the `Colv` argument to `NA`. This tells the heatmap function not be cluster the columns. 
 
 ```{r}
 heatmap (as.matrix(exprs(varFiltered)[highVarGenes, ]),
-         labCol = SampleGroup , labRow = Symbols,Colv=NA)
+         labCol = SampleGroup , Colv=NA)
 ```
 
 ```{r}
 heatmap (as.matrix(exprs(varFiltered)[highVarGenes, order(SampleGroup)]),
-         labCol = SampleGroup[order(SampleGroup)], labRow = Symbols,Colv = NA)
+         labCol = SampleGroup[order(SampleGroup)], Colv = NA)
 ```
 
 
@@ -555,19 +537,8 @@ heatmap (as.matrix(exprs(varFiltered)[highVarGenes, ]) ,
 
 ```
 
-## Customising the heatmap
 
-The heatmap function can be customised in many ways to make the output more informa-
-tive. For example, the `labRow` and `labCol` parameters can be used to give labels to the rows
-(genes) and columns (sample) of the heatmap. Similarly, `ColSideColors` and `RowSideColors` give coloured labels, often used to indicate different groups which are know in advance.
-See the help page for heatmap for more details.
 
-```{r}
-
-heatmap(as.matrix(exprs(varFiltered)[highVarGenes, ]) ,
-        labCol = Patient, ColSideColors = as.character(groupColours),
-        labRow = Symbols)
-```
 
 The colours used to display the gene expression values can also be modified. For this, we
 can use the `RColorBrewer` package which has functions for creating pre-defined palettes. The
@@ -585,23 +556,6 @@ heatmap (as.matrix(exprs(varFiltered)[highVarGenes, ]) ,
   ColSideColors = as.character(groupColours) , labRow = Symbols,
   col=hmcol)
 ```
-
-
-A popular use for heatmaps is to take an existing gene list (e.g. genes found to be significant
-in a previous study, or genes belonging to a particular pathway) and produce an image of
-how they cluster the data for exploratory purposes. This can be achieved by selecting
-the correct rows in the data matrix.
-
-```{r}
-tests <- rowttests(exprs(varFiltered),SampleGroup)
-N <- 50
-myGenes <- rownames(tests)[1:N]
-symbols <- fData(varFiltered)[myGenes,"Symbol"]
-heatmap (as.matrix(exprs(varFiltered)[myGenes , ]),
-  ColSideColors = as.character (groupColours) , labCol = Patient ,
-  labRow = symbols , col = hmcol )
-```
-
 
 ## Other packages that produce heatmaps
 
@@ -640,19 +594,127 @@ heatmap.2 (as.matrix(exprs(varFiltered)[highVarGenes, ]) ,
 
 # Principal Components Analysis
 
-Principal components analysis (PCA) is a data reduction technique that allows us to simplify multidimensional data sets to 2 or 3 dimensions for plotting purposes and identify which
-factors explain the most variability in the data. We can use the prcomp function to perform
-a PCA and we have to supply it with a distance matrix. The resulting object contains information on the proportion of variance that is ’explained’ by each component. Ideally, we want
-to see that the majority of the variance is explained by the first 2 or 3 components, and that
-these components are associated with a biological factor
+
+## Why Use PCA
+
+- In genomic data, we have a large number of variables which are often highly correlated
+- PCA is one of many *dimension-reduction* techniques that can remove redundancy and give a smaller more mangeable set of variables. In summary it can help us to:-
+
+- Reduce *dimensionality* of the data
+- Decrease the *redundancy* of the data
+- Filter the *noise* in the data
+- *Compress* the data
+
+
+## PCA Example: Whisky
+
+The data: 86 malt whiskies scored for 12 different taste categories
+
+(https://www.mathstat.strath.ac.uk/outreach/nessie/nessie_whisky.html)
+
+- Q. Can we find which whiskies have a similar taste profile?
+- Q. What are the factors that determine the taste profile?
+
+```{r echo=FALSE}
+download.file("https://www.mathstat.strath.ac.uk/outreach/nessie/datasets/whiskies.txt",destfile = "whiskies.txt")
+whisky <- read.csv("whiskies.txt")
+scores <- whisky[,c(3:14)]
+rownames(scores) <- whisky$Distillery
+head(scores,n=3)
+```
+
+## What does PCA tell us for these data?
+
+![](images/whisky-pca.png)
+
+It is particularly useful to overlay known sample attributes to the plot which explain the patterns.
+
+![](images/whisky-pca-annotated.png)
+
+## More-relevant example
+
+- MAQC microarrays with mixtures of Brain and Reference RNA (UHRR) at different concentrations
+- Run in different labs
+    + what do you notice?
+![](images/MAQC-pca.png)
+
+
+So, PCA can be used as a quality assessment tool and can inform us of any factors we need to account for in the analysis
+
+- In this case we could correct for the batch effect, or add a batch factor to the linear model for analysis
+
+![](images/MAQC-pca-corrected.png)
+
+## What is going-on here?
+
+A two-dimensional case
+
+- Find direction of most variation (PC1)
+- Direction that explains next amount of variation is orthogonal (at 90 degrees) (PC2)
+- Each point on original x and y is a linear combination of PC1 and PC2
+- Higher dimensional data can have many more components PC3, PC4....
+    + although they will become increasingly less-influential
+
+![pca-explained](images/pca-explained.png)
+
+
+## Running the PCA
+
+The `prcomp` function does the hard-work for us
+
+- It is computing *eigenvectors* and *eigenvalues* from our input matrix
+    + or rather the covariance matrix
+- We have 12 components (as we had 12 variables)
+- The components are ordered according to the amount of variance they *explain*
+
+```{r}
+pca <- prcomp(scores)
+summary(pca)
+
+```
+
+
+## Dissecting the PCA results
+
+- Each column in a principal component
+    + in decreasing order of importance
+- The values are the measure of importance for each component
+    + e.g. Smoky seems to be important for PC1
+    + Smoky and Floral are opposite ends of the spectrum for PC1
+    
+The variable loadings are given by the `$rotation` matrix, which has one row for each sample and one column for each principal component. The principal components are ordered accorded to amount of variance explained. The actual values of a particular component have no meaning, but their relative values can be used to inform us about relationships between samples.
+
+
+## How many components?
+
+We look at the variance explained by each component and judge where it "drops-off"
+
+- Sometimes called a "scree-plot"
+```{r}
+plot(pca)
+```
+
+![scree](images/scree.jpg)
+
+## Dissecting the PCA results
+
+The new co-ordinate system is given by `pca$x`
+
+- One row for each of our whiskies, one column for each component
+- The original coordinates are a linear combination of the new ones
+    + an exercise for the reader?
+
+```{r}
+pca$x[1:3,1:5]
+```
+
+## Applying PCA to gene expression data
 
 ```{r}
 pca <- prcomp(exprs(varFiltered))
 plot(pca)
 summary(pca)
 ```
-
-The variable loadings are given by the `$rotation` matrix, which has one row for each sample and one column for each principal component. The principal components are ordered accorded to amount of variance explained. The actual values of a particular component have no meaning, but their relative values can be used to inform us about relationships between samples.
 
 ******
 ## Q  Does the first principal component appear to be related to the sample groups in the experiment? 
@@ -684,7 +746,8 @@ We might also add a legend to explain the different colours.
 plot(pca$rotation[,1],pca$rotation[,2],
      pch=16,col=as.character(groupColours))
 legend("topright",fill=c("blue","yellow"),legend=c("tumour","normal"))
-text(pca$rotation[,1],pca$rotation[,2]-0.01,labels = Patient)
+Patients <- pd$characteristics_ch1.1
+text(pca$rotation[,1],pca$rotation[,2]-0.01,labels = Patients)
 ```
 
 Multi-dimensional Scaling (MDS) is a similar approach.  The distance between each pair of samples (columns) is the root-mean-square deviation (Euclidean distance) for the top top genes. Distances on the plot can be interpreted as leading log2-fold-change, meaning the typical (root-mean-square) log2-fold-change between the samples for the genes that distinguish those samples.
