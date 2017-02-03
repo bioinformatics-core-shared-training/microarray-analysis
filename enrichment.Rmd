@@ -315,7 +315,7 @@ geneSetTest (index = randGenes , statistics = ttests$statistic ,
 
 ```
 
-A useful way of visualising the results is with a `barcodeplot`. The statistics are ranked left to right from largest to smallest. The ranked statistics are represented by a shaded bar or bed, and the positions of the specified subsets are marked by vertical bars, forming a pattern like a barcode. 
+A useful way of visualising the results is with a `barcodeplot`. The statistics are ranked left to right from largest to smallest. The ranked statistics are represented by a shaded bar or bed, and the positions of the specified subsets are marked by vertical bars, forming a pattern like a barcode. Inspired by GSEA, the line graph above the plot (an *enrichment worm*) gives a sense of whereabouts the enrichment is highest. 
 ```{r}
 barcodeplot (statistics = as.numeric(ttests$statistic) , index = randGenes )
 ```
@@ -356,7 +356,7 @@ geneSetTest (index = myGenes , statistics = ttests$statistic ,
 geneSetTest (index = myGenes , statistics = ttests$statistic ,
   alternative = "up" )
 
-barcodeplot (statistics = as.numeric(ttests$statistic) , index = myGenes )
+barcodeplot (statistics = as.numeric(ttests$statistic) , index = myGenes)
 ```
 
 However, if we want to interrogate the results for a particular GO or KEGG pathway we could look up the identifiers manually, or use some useful functionality in Bioconductor.
