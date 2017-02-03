@@ -625,9 +625,15 @@ head(scores,n=3)
 
 ## What does PCA tell us for these data?
 
+Allows us to visualise the dataset in two (perhaps three) dimensions and see the main sources of variation in the data
+
+- in this case, which samples taste most similar
+
 ![](images/whisky-pca.png)
 
-It is particularly useful to overlay known sample attributes to the plot which explain the patterns.
+It is particularly useful to overlay known sample attributes to the plot
+
+- can explain the similarities between whiskies
 
 ![](images/whisky-pca-annotated.png)
 
@@ -668,22 +674,32 @@ The `prcomp` function does the hard-work for us
 - The components are ordered according to the amount of variance they *explain*
 
 ```{r}
+scores
 pca <- prcomp(scores)
+pca
+names(pca)
 summary(pca)
 
 ```
 
 
+
+
 ## Dissecting the PCA results
 
-- Each column in a principal component
-    + in decreasing order of importance
-- The values are the measure of importance for each component
+The variable loadings are given by the `$rotation` matrix, which has one row for each sample and one column for each principal component. 
+
+- The principal components are ordered accorded to amount of variance explained. 
+- The actual values of a particular component have no meaning, 
+    + but their relative values can be used to inform us about relationships between samples.
     + e.g. Smoky seems to be important for PC1
     + Smoky and Floral are opposite ends of the spectrum for PC1
-    
-The variable loadings are given by the `$rotation` matrix, which has one row for each sample and one column for each principal component. The principal components are ordered accorded to amount of variance explained. The actual values of a particular component have no meaning, but their relative values can be used to inform us about relationships between samples.
 
+```{r}
+pca$rotation
+```
+
+    
 
 ## How many components?
 
@@ -696,8 +712,6 @@ plot(pca)
 
 ![scree](images/scree.jpg)
 
-## Dissecting the PCA results
-
 The new co-ordinate system is given by `pca$x`
 
 - One row for each of our whiskies, one column for each component
@@ -708,55 +722,101 @@ The new co-ordinate system is given by `pca$x`
 pca$x[1:3,1:5]
 ```
 
+Plotting the first and second columns as a scatter plot gives the plot we saw above
+
+
+```{r}
+plot(pca$x[,1],pca$x[,2],
+     pch=16)
+```
+
+### Digression about ggplot2
+
+The `ggplot2` package was actually used to create the plots.
+
+- Beyond the scope of the course, but you should check out our [Intermediate R](http://bioinformatics-core-shared-training.github.io/r-intermediate/) course for more details
+- Essentially, it allows us to map between the variables in our data and the characteristics of the plot
+    + x- and y-axis position, colour, shape, size of points
+
+
+```{r}
+df <- data.frame(whisky,pca$x)
+df
+library(ggplot2)
+p <- ggplot(df, aes(x=PC1,y=PC2,label=Distillery)) + geom_point() + geom_text(alpha=0.3)
+p
+```
+
+```{r}
+p <- ggplot(df, aes(x=PC1,y=PC2,label=Distillery,cex=Smoky,col=as.factor(Floral))) + geom_point() + geom_text(cex=5,alpha=0.3)
+p
+
+```
+
 ## Applying PCA to gene expression data
 
+In the above example, we had several whiskies and had made several observations about each
+
+- Each row was a whisky, and the observations were in columns
+
+In the gene expression case, we have biological samples and the measurements we have made are gene expression levels
+
+- So for PCA we need to transpose the matrix 
+    + like we did prior to clustering
+- We can then proceed as before
+
 ```{r}
-pca <- prcomp(exprs(varFiltered))
-plot(pca)
-summary(pca)
+pca.geneExpression <- prcomp(t(exprs(varFiltered)))
+summary(pca.geneExpression)
+plot(pca.geneExpression)
 ```
 
-******
-## Q  Does the first principal component appear to be related to the sample groups in the experiment? 
-******
+This time, the matrix `$rotation` has one row for each gene and one column for each component
+
+- We are more interested in the new (projected) coordinates and how they relate to the (known) sample groups
+    + remember these are found in `$x`
 
 ```{r}
-head(pca$rotation)
-boxplot(pca$rotation[,1]~SampleGroup)
+head(pca.geneExpression$rotation)
+head(pca.geneExpression$x)
 
 ```
 
-Quite often, we plot the first few PCs against each other to visualise sample relationship. This can be achived with a scatter plot with the first principal component on the x-axis, and second principal component on the y-axis.
+Quite often, we plot the first few PCs against each other to visualise sample relationship. 
 
-
+- This can be achived with a scatter plot with the first principal component on the x-axis, and second principal component on the y-axis.
+    + the samples clearly seem to separate, but is this separation consistent with the metadata?
+  
 ```{r}
-plot(pca$rotation[,1],pca$rotation[,2])
+plot(pca.geneExpression$x[,1],pca.geneExpression$x[,2])
 ```
 
 We can improve this plot by adding colours for the different sample groups and choosing a different plotting character.
 
 ```{r}
-plot(pca$rotation[,1],pca$rotation[,2],
+plot(pca$x[,1],pca$x[,2],
      pch=16,col=as.character(groupColours))
+
 ```
 
 We might also add a legend to explain the different colours. 
 
 ```{r}
-plot(pca$rotation[,1],pca$rotation[,2],
+plot(pca.geneExpression$x[,1],pca.geneExpression$x[,2],
      pch=16,col=as.character(groupColours))
-legend("topright",fill=c("blue","yellow"),legend=c("tumour","normal"))
+legend("bottomright",fill=c("blue","yellow"),legend=c("tumour","normal"))
 Patients <- pd$characteristics_ch1.1
-text(pca$rotation[,1],pca$rotation[,2]-0.01,labels = Patients)
+text(pca.geneExpression$x[,1],pca.geneExpression$x[,2]-0.01,labels = Patients)
 ```
 
-Multi-dimensional Scaling (MDS) is a similar approach.  The distance between each pair of samples (columns) is the root-mean-square deviation (Euclidean distance) for the top top genes. Distances on the plot can be interpreted as leading log2-fold-change, meaning the typical (root-mean-square) log2-fold-change between the samples for the genes that distinguish those samples.
+Happily, the first component seems to separate the tumours from normals
+
+- We can also see this with a boxplot
 
 ```{r}
-library(limma)
-plotMDS(exprs(varFiltered),col=as.character(groupColours),labels = Patient)
+boxplot(pca.geneExpression$x[,1] ~ SampleGroup)
+View(pd)
 ```
-
 
 # Classification
 
