@@ -1,18 +1,33 @@
 ---
 title: "Ontologies and Enrichment"
-author: "Mark Dunning; mark 'dot' dunning 'at' cruk.cam.ac.uk, Oscar Rueda; oscar 'dot' rueda 'at' cruk.cam.ac.uk"
+author: "Mark Dunning; mark 'dot' dunning 'at' cruk.cam.ac.uk"
 date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
-output: html_document
+output: 
+  html_notebook: 
+    toc: yes
+    toc_float: yes
 ---
 ```{r echo=FALSE,message=FALSE}
 library(GEOquery)
 library(limma)
 ```
 
+# Gene-Ontologies and Annotation
+
 ## Gene-Ontology Analysis
 
-In this section we give an example of how to find a list of relevant pathways / GO terms
-from a list of differentially-expressed genes. 
+In the early days of microarray analysis, people were happy if they got a handful of differentially-expressed genes that they could validate or follow-up. However, with later technologies (and depending on the experimental setup) we might have thousands of statistically-significant results, which no-one has the time to follow-up. Also, we might be interested in pathways / mechanisms that are altered and not just individual genes.
+
+In this section we move towards discovering if our results are ***biologically significant***. Are the genes that we have picked statistical flukes, or are there some commonalities. 
+
+There are two different approaches one might use, and we will cover the theory behind both
+
+- There is a lso a bunch of websites for doing the tests
+    + we will show how they are done in Bioconductor so the theory is clear
+- We will assume we have done a differential-expression analysis, but the same techniques can be used for other situations when we have a gene list
+    + ChIP-seq
+    + RNA-seq
+    
 
 ## Theory Part I: Over-representation analysis
 
@@ -29,7 +44,7 @@ Let's imagine that we have a bag full of balls. Each balls represents a gene in 
 - Paint the balls representing our selected list grey, and paint the rest red.
 
 
-![bag-and balls](images/bag-and-balls.png)
+![](images/bag-and-balls.png)
 
 In this small example, we can define;
 
@@ -38,39 +53,58 @@ In this small example, we can define;
 
 Now, lets select a number (say, 12) of the balls at random without seeing into the bag and look at what we get
 
-![picked-balls](images/picked-balls.png)
+![](images/picked-balls.png)
 
 
 We have picked, at random, 8 grey balls. Using simulations, we can repeat the process and look at how many grey we get. We can (of course!) do this in R. In base R there is a family of functions that can generate random draws from various distributions; `rnorm`, `rbinom`, `rhyper` etc....
+
+The distribution of the data shows what the most-likely values are
 
 ```{r}
 #see ?rhyper for argument definition
 trials <- rhyper(10000,40,10,12)
 hist(trials)
+```
+
+We can count how many times each value is observed
+
+```{r}
 table(trials)
+```
+
+Dividing by the number of trials gives a probability of sorts
+
+```{r}
 table(trials)/10000
+
+```
+
+The probability of getting *at least* a certain number can also be computed
+
+```{r}
 cumsum(table(trials)/10000)
 1-cumsum(table(trials)/10000)
 ```
+
+
 
 Back to our example, the distribution of balls can be expressed as a contingency table, on which we can use a Fisher's exact test
 
 Total grey balls: 10
 Total in subset: 12
 
-```{r results='asis',echo=FALSE}
-library(knitr)
+```{r}
 df <- data.frame(Selection_in = c(8,4), Selection_out = c(2,26))
 rownames(df) <- c("Grey_in", "Grey_out")
-kable(df)
+df
 ```
 
 
 
-```{r results='asis',echo=FALSE}
+```{r}
 df <- data.frame(Selection_in = c("a","c","a+c"), Selection_out = c("b","d","b+d"), RowTotal = c("a +b","c+d","a+b+c+d (=n)"))
 rownames(df) <- c("Grey_in", "Grey_out","Column Total")
-kable(df)
+df
 ```
 
 The formula for Fishers exact test is;
@@ -93,6 +127,10 @@ What genes were candidates for selection as universe?
 
 Just changing the size of the universe alone can have a massive effect on the p-value
 
+- In the formula, we have to divide by the universe size
+    + so the probability will become very small as this increases
+    + even if all the other numbers stay the same
+
 ```{r}
 ## Code from Seth Falcon
 P <- function(size){
@@ -105,15 +143,6 @@ P <- function(size){
 P(1000)
 P(5000)
 ```
-
-
-
-```{r}
-ps <- sapply(seq(1000,5000,by=50),P)
-plot(seq(1000,5000,by=50),ps,type="l",xlab="size",ylab="pval")
-abline(h=0.05,lty=2,col="red")
-```
-
 
 
 
@@ -141,60 +170,17 @@ exprs(colonData) <- log2(exprs(colonData))
 We are now going to create a gene universe by removing genes for will not contribute to the
 subsequent analysis. Such filtering is done without regarding the phenotype variables - hence
 a ”non-specific” filter. An Illumina Human6 chip contains around 48,00 probes, but less than
-half of these have enough detailed information to useful for a GO analysis. Therefore we restrict the dataset to only probes for which we have a Entrez ID. 
+half of these have enough detailed information to useful for a GO analysis. Therefore we restrict the dataset to only probes for which we have a Entrez ID. Moreover, we would like only the most-variable probe for a given gene.
 
-We will identify the probes that have an Entrez ID.
-
-```{r}
-anno <- fData(colonData)
-anno <- anno[,c("Symbol","Entrez_Gene_ID","Chromosome","Cytoband")]
-hasEntrez <- which(anno$Entrez_Gene_ID != "")
-colonData.filt <- colonData[hasEntrez,]
-```
-
-In the following, we filter further by collapsing to unique Entrez IDs. The IQR is used as a criteria for selecting the *best* probe for each gene. To perform this selection we make use of the `apply` function in R. This is a convenient means of doing the same calculation for each row (or column) in a matrix. In our case, we want to calculate the IQR (using the `IQR` function) of each row in the matrix `exprs(colonData.filt)`. 
+- This can be performed automatically using the `nsFilter` function
+- First we have to tell the function we are dealing with `illuminaHumanv3` data
 
 ```{r}
-testStat <- apply(exprs(colonData.filt),1, IQR,na.rm=TRUE)
-length(testStat)
-```
+library(genefilter)
+annotation(colonData) <- "illuminaHumanv3"
+filt <- nsFilter(colonData)
+colonData.filt <- filt$eset
 
-Next we group together the iqrs for probes that represent the same Entrez ID. This we do using `split`. The result is a *list* with each item in the list containing the names of the probes for that Entrez ID and the IQRs. 
-
-```{r}
-lls <- fData(colonData.filt)$Entrez_Gene_ID
-tSsp = split.default(testStat, lls)
-tSsp[[1]]
-anno[names(tSsp[[1]]),]
-```
-
-We can select the appropriate probe
-
-
-```{r}
-which.max(tSsp[[1]])
-names(which.max(tSsp[[1]]))
-selectedID <- sapply(tSsp, function(x) names(which.max(x)))
-selectedID[1]
-```
-
-We can then filter the `colonData.filt` object again.
-
-```{r}
-colonData.filt <- colonData.filt[unlist(selectedID),]
-length(unique(fData(colonData.filt)$Entrez_Gene_ID))
-any(duplicated(fData(colonData.filt)$Entrez_Gene_ID))
-```
-
-
-After this filtering, we are left with `r length(unique(fData(colonData.filt)$Entrez_Gene_ID))` unique Entrez IDs. However, not all these genes will be expressed, or changing, in the conditions we are investigating.
-
-It is also recommended to select probes with sufficient variability across samples to be interesting; as probes with little variability will no be interesting to the question we are trying to answer. The IQR of each probe across all arrays is commonly used for this. We will choose a cut-off of 0.25.
-
-```{r}
-entrezIQR = apply(exprs(colonData.filt), 1 , IQR)
-hist(entrezIQR, xlim=c(0,2),breaks=100)
-colonData.filt <- colonData.filt[entrezIQR > 0.25,]
 ```
 
 
@@ -208,6 +194,8 @@ write.table(universeIds, file="geneUniverse.txt",sep="\t",row.names = FALSE,quot
 ```
 
 We've previously explained the following steps to produce a table of DE genes. However, for this analysis we are interested in a relatively long gene-list and do not need to be so stringent, so we can apply a standard t-test
+
+- The `rowttests` function is another useful function for applying the same operation to the rows of a matrix, in this case a t-test
 
 ```{r}
 library(genefilter)
@@ -240,18 +228,18 @@ You can upload this text file to the DAVID website, along with the gene universe
 
 
 The hyperGTest function is used to do the hypergeometric test for GO terms. Rather than
-passing a long list of parameters to the function. An object of type GOHyperGParams is
+passing a long list of parameters to the function. An object of type `GOHyperGParams` is
 created to hold all the parameters we need to run the hypergeometric test. This object can
-then be passed to hyperGTest multiple times without having to re-type the parameters each
+then be passed to `hyperGTest` multiple times without having to re-type the parameters each
 time. The meanings of these parameters are as follows:
 
-  - geneIds - The list of identifiers for the genes that we have selected as interesting
-  - universeGeneIds - The list of identifiers resulting from non-specific filtering
-  - annotation - The name of the annotation package that will be used
-  - ontology - The name of the GO ontology that will be tested; either BP, CC or MF
-  - pvaluecutoff - p-value that we will use to select significant GO terms
-  - testDirection - Either ”over” or ”under” for over or under represented terms respectively
-  - conditional - A more sophisticated form of hypergeometric test, which takes the relationships between terms in the GO graph can be used if this is set to TRUE. For this practical we will keep conditional = FALSE
+  - `geneIds` - The list of identifiers for the genes that we have selected as interesting
+  - `universeGeneIds` - The list of identifiers resulting from non-specific filtering
+  - `annotation` - The name of the annotation package that will be used
+  - `ontology` - The name of the GO ontology that will be tested; either BP, CC or MF
+  - `pvaluecutoff` - p-value that we will use to select significant GO terms
+  - `testDirection` - Either ”over” or ”under” for over or under represented terms respectively
+  - `conditional` - A more sophisticated form of hypergeometric test, which takes the relationships between terms in the GO graph can be used if this is set to TRUE. For this practical we will keep conditional = FALSE
 
   
 ```{r cache=TRUE}
@@ -264,37 +252,19 @@ hgOver = hyperGTest(params)
 hgOver
 ```
 
-The summary function can be used to view the results of the test in matrix form. The rows
+The `summary` function can be used to view the results of the test in matrix form. The rows
 of the matrix are arranged in order of significance. The p-value is shown for each GO term
 along with with total number of genes for that GO term, number of genes we would be ex-
 pect to appear in the gene list by chance and that number that were observed. A descriptive
-name is also given for each term. The results can also be printed out to a HTML report us-
-ing htmlReport.
+name is also given for each term. The results can also be printed out to a HTML report using the `htmlReport` function.
 
 ```{r cache=TRUE}
 summary (hgOver)[1:20 , ]
+htmlReport(hgOver,file="go-summary.html")
+
+
 ```
 
-GOstats also has the facility to test for KEGG pathways and chromosome bands which are
-over-represented. The procedure of creating a gene universe and set of selected genes is the
-same. However, we have to use a different object for the parameters, as not all
-
-```{r cache=TRUE}
-keggParams = new ("KEGGHyperGParams" , geneIds = selectedEntrezIds ,
-  universeGeneIds = universeIds , annotation = "illuminaHumanv3" ,
-  pvalueCutoff = 0.05 , testDirection = "over" )
-
-keggHgOver = hyperGTest (keggParams)
-
-summary (keggHgOver)
-
-chrParams = new ("ChrMapHyperGParams" , geneIds = selectedEntrezIds ,
-universeGeneIds = universeIds , annotation = "illuminaHumanv3" ,
-pvalueCutoff = 0.05 , testDirection = "over" , conditional = TRUE )
-
-chrHgOver = hyperGTest (chrParams)
-summary (chrHgOver)
-```
 
 
 ## Theory Part II: Threshold-free
@@ -325,11 +295,14 @@ to see if the selected genes are up-regulated (`alternative=up`) or down-regulat
 
 To demonstrate, we will pick 50 genes at random. We have to supply the entire set of test statistics along indices of interest. The result of the `barcode` plot below shows there is no particular trend for genes we have picked be up- or down-regulated.
 
+- Here `sample` picks a random set of `n` values from a given vector
+- As we expect, the random rows are neither skewed towards to top or bottom of the ranked list
 
 ```{r}
 library (limma)
 
 randGenes <- sample(1:nrow(ttests),50)
+randGenes
 
 geneSetTest (index = randGenes , statistics = ttests$statistic)
 
@@ -339,9 +312,14 @@ geneSetTest (index = randGenes , statistics = ttests$statistic ,
 geneSetTest (index = randGenes , statistics = ttests$statistic ,
   alternative = "up" )
 
-barcodeplot (statistics = as.numeric(ttests$statistic) , index = randGenes )
 
 ```
+
+A useful way of visualising the results is with a `barcodeplot`. The statistics are ranked left to right from largest to smallest. The ranked statistics are represented by a shaded bar or bed, and the positions of the specified subsets are marked by vertical bars, forming a pattern like a barcode. 
+```{r}
+barcodeplot (statistics = as.numeric(ttests$statistic) , index = randGenes )
+```
+
 
 On the other hand, we could deliberately pick genes with a significant p-value and notice how the results are altered.
 
@@ -362,7 +340,10 @@ barcodeplot (statistics = as.numeric(ttests$statistic) , index = myGenes )
 
 ```
 
-We have already seen of example of searching for particular gene symbols in our output tables.
+If we have a specific query about a set of genes, we need to locate them in the list of ranked statistics. 
+
+- We have already seen of example of searching for particular gene symbols in our output tables.
+- We were careful to make sure the annotation was in the same order as the expression matrix, so this should be straightforward
 
 ```{r}
 mylist <- c("LOC441066","ARF3","FMNL3","CSF1R","XLKD1","TTRAP","DMWD","SYNPO2L","PILRB","LAMP3")
@@ -377,6 +358,10 @@ geneSetTest (index = myGenes , statistics = ttests$statistic ,
 
 barcodeplot (statistics = as.numeric(ttests$statistic) , index = myGenes )
 ```
+
+However, if we want to interrogate the results for a particular GO or KEGG pathway we could look up the identifiers manually, or use some useful functionality in Bioconductor.
+
+# Annotation
 
 ## Converting between different identifiers
 
@@ -425,5 +410,6 @@ We can match these Entrez IDs to our annotation object and proceed as before.
 ```{r}
 myGenes <- which(anno.final$Entrez %in% goQuery$ENTREZ)
 geneSetTest (index = myGenes , statistics = ttests$statistic)
+barcodeplot (statistics = as.numeric(ttests$statistic) , index = myGenes )
 ```
 

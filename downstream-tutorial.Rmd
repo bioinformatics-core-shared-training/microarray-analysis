@@ -518,12 +518,12 @@ want to order the columns according to sample groups.
 - We can do this by re-ordering the input matrix manually and setting the `Colv` argument to `NA`. This tells the heatmap function not be cluster the columns. 
 
 ```{r}
-heatmap (as.matrix(exprs(varFiltered)[highVarGenes, ]),
+heatmap (as.matrix(exprs(colonData)[highVarGenes, ]),
          labCol = SampleGroup , Colv=NA)
 ```
 
 ```{r}
-heatmap (as.matrix(exprs(varFiltered)[highVarGenes, order(SampleGroup)]),
+heatmap (as.matrix(exprs(colonData)[highVarGenes, order(SampleGroup)]),
          labCol = SampleGroup[order(SampleGroup)], Colv = NA)
 ```
 
@@ -532,7 +532,7 @@ Alternatively, a pre-calculated dendrogram could be used.
 
 ```{r}
 clus.ward <- hclust (cor.dist , method = "ward")
-heatmap (as.matrix(exprs(varFiltered)[highVarGenes, ]) ,
+heatmap (as.matrix(exprs(colonData)[highVarGenes, ]) ,
          Colv = as.dendrogram(clus.ward) , labCol = SampleGroup )
 
 ```
@@ -552,7 +552,7 @@ package.
 library (RColorBrewer)
 display.brewer.all()
 hmcol <- brewer.pal(11 , "RdBu")
-heatmap (as.matrix(exprs(varFiltered)[highVarGenes, ]) ,
+heatmap (as.matrix(exprs(colonData)[highVarGenes, ]) ,
   ColSideColors = as.character(groupColours) , labRow = Symbols,
   col=hmcol)
 ```
@@ -568,7 +568,7 @@ patientCol <- rep(rainbow(n=length(unique(Patient))),each=2)
 colourMatrix[,1] <- as.character(groupColours)
 colourMatrix[,2] <- patientCol
 
-heatmap.plus (as.matrix(exprs(varFiltered)[highVarGenes, ]) ,
+heatmap.plus (as.matrix(exprs(colonData)[highVarGenes, ]) ,
   ColSideColors = as.matrix(colourMatrix) , labRow = Symbols,
   col=hmcol)
 
@@ -578,7 +578,7 @@ Another alternative is provided by the `gplots` package. The `heatmap.2` functio
 
 ```{r}
 library(gplots)
-heatmap.2 (as.matrix(exprs(varFiltered)[highVarGenes, ]) ,
+heatmap.2 (as.matrix(exprs(colonData)[highVarGenes, ]) ,
   ColSideColors = as.character(groupColours) , labRow = Symbols,
   col=hmcol)
 ```
@@ -586,7 +586,7 @@ heatmap.2 (as.matrix(exprs(varFiltered)[highVarGenes, ]) ,
 We can turn-off the column density if we wish.
 
 ```{r}
-heatmap.2 (as.matrix(exprs(varFiltered)[highVarGenes, ]) ,
+heatmap.2 (as.matrix(exprs(colonData)[highVarGenes, ]) ,
   ColSideColors = as.character(groupColours) , labRow = Symbols,
   col=hmcol,trace="none")
 ```
