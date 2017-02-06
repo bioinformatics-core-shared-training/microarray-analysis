@@ -28,7 +28,7 @@ The tutorial covers the application of a number of exploratory analysis techniqu
 
 We will re-use the colon cancer data in GSE33126, and saw yesterday how to import these data into R.
 
-```{r cache=TRUE,message=FALSE}
+```{r cache=TRUE,message=FALSE,warning=FALSE}
 library(GEOquery)
 url <- "ftp://ftp.ncbi.nih.gov/pub/geo/DATA/SeriesMatrix/GSE33126/"
 filenm <- "data/GSE33126_series_matrix.txt.gz"
@@ -553,8 +553,7 @@ library (RColorBrewer)
 display.brewer.all()
 hmcol <- brewer.pal(11 , "RdBu")
 heatmap (as.matrix(exprs(colonData)[highVarGenes, ]) ,
-  ColSideColors = as.character(groupColours) , labRow = Symbols,
-  col=hmcol)
+  ColSideColors = as.character(groupColours) , col=hmcol)
 ```
 
 ## Other packages that produce heatmaps
@@ -564,13 +563,14 @@ One drawback of the standard `heatmap` function is that it only allows one "trac
 ```{r}
 library(heatmap.plus)
 colourMatrix <- matrix(nrow=length(SampleGroup),ncol=2)
+
+Patient <- pd$characteristics_ch1.1
 patientCol <- rep(rainbow(n=length(unique(Patient))),each=2)
 colourMatrix[,1] <- as.character(groupColours)
 colourMatrix[,2] <- patientCol
 
 heatmap.plus (as.matrix(exprs(colonData)[highVarGenes, ]) ,
-  ColSideColors = as.matrix(colourMatrix) , labRow = Symbols,
-  col=hmcol)
+  ColSideColors = as.matrix(colourMatrix) , col=hmcol)
 
 ```
 
@@ -579,16 +579,14 @@ Another alternative is provided by the `gplots` package. The `heatmap.2` functio
 ```{r}
 library(gplots)
 heatmap.2 (as.matrix(exprs(colonData)[highVarGenes, ]) ,
-  ColSideColors = as.character(groupColours) , labRow = Symbols,
-  col=hmcol)
+  ColSideColors = as.character(groupColours) , col=hmcol)
 ```
 
 We can turn-off the column density if we wish.
 
 ```{r}
 heatmap.2 (as.matrix(exprs(colonData)[highVarGenes, ]) ,
-  ColSideColors = as.character(groupColours) , labRow = Symbols,
-  col=hmcol,trace="none")
+  ColSideColors = as.character(groupColours) , col=hmcol,trace="none")
 ```
 
 
