@@ -932,7 +932,7 @@ which shows how the error changes with the number of genes. In the plot produced
 function there are two panels; the top one shows the errors in the whole dataset and the bottom one considers each class separately. In each panel, the x axis corresponds to the thresh-
 old (and number of genes at each threshold) whereas the y-axis is the number of misclassifications.
 
-```{r fig.width=12}
+```{r fig.width=12,fig.height=12}
 model.cv <- pamr.cv(model , train.dat , nfold = 10)
 model.cv
 pamr.plotcv(model.cv)
