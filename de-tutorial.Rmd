@@ -232,7 +232,7 @@ testResults[which(testResults$Symbol %in% mylist),]
 ## Further filtering and ordering
 
 ******
-## Q. Create a data frame containing genes with i) adjsuted p-value < 0.05 ii) log-fold change > 1. How many genes does this contain?
+## Q. Create a data frame containing genes with i) adjusted p-value < 0.05 ii) log-fold change > 1. How many genes does this contain?
 ## Q. Now order this data frame according to chromosome
 
 ******

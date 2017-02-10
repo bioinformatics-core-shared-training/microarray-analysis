@@ -112,7 +112,7 @@ The ***arrayQualityMetrics*** package can automatically-generate a variety of QA
 
 
 ******
-### Generate an arrayQualityMetrics report for the dataset. Do any arrays seem to be poor quality?
+### (Optional) Generate an arrayQualityMetrics report for the dataset. Do any arrays seem to be poor quality?
 
 ```{r message=FALSE,cache=TRUE,warning=FALSE}
 library(arrayQualityMetrics)
@@ -154,24 +154,11 @@ subset
 So in order to remove one or more poor-quality arrays we need to know their indices.
 
 
-******
-### Now create a new dataset with the poor quality arrays removed
-
-******
-
-```{r}
-
-## Your code here ##
-
-
-```
-
-
-
 When creating a subset of an `ExpressionSet` object, we can also filter on rows. e.g. to select the first 100 genes.
 
 ```{r}
 subset <- mydata[1:100,]
+dim(subset)
 ```
 
 In the next section we will look into the annotation of the dataset in more detail
@@ -294,27 +281,7 @@ IQR(E[1274,])
 IQR(E[10723,])
 ```
 
-The `genefilter` package in Bioconductor provides several methods to assist in the filtering of microarray data based on a lack of annotation or low variation. However, in order to use the package we first have to re-set the value of the annotation currently stored with the object. 
-
-```{r message=FALSE}
-library(genefilter)
-annotation(mydata) <- "hgu133a"
-```
-
-******
-
-## Exercise
-- Use the `nsFilter` function to filter the `ExpressionSet` object `mydata`
-- How many probes remain after filtering?
-    + does it seem a bit harsh? what options are available for customising the filter
-    
-```{r}
-## Your answer here ##
-
-```
-
-
-******
+As we will see later, the `genefilter` package in Bioconductor provides several methods to assist in the filtering of microarray data based on a lack of annotation or low variation. 
 
 # GEO Example. Dealing with large cohorts with clinical data
 
@@ -399,31 +366,21 @@ Up to this point, we have been using the `boxplot` function to visualise the dis
 
 A common way of creating a `boxplot` is using the *formula* syntax in R. Also used in statistics (and linear modelling in particular) we can specify a *response* and predictor variable. In the case of our analysis, we are looking to see if the gene expression level of a particular gene can be explained by a categorical variable (e.g. gender). 
 
-To produce a boxplot of the gene expression of a particular gene as a function of Gender we use:-
+******
+Exercise: 
+
+- Produce a boxplot to see if the first probe that targets XIST shows and different between males and females
+    + the expression values for the first probe can be found in `subset[1,]`
+*****
+
+```{r }
+
+## Your answer here ## 
+
+```
 
 - Note that the order of categories on the boxplot is determined by alphabetical order
     + for how to change this, see the note in the Appendix below
-
-```{r}
-gender <- pd$characteristics_ch1.1
-boxplot(subset[1,]~gender)
-```
-
-The boxplot is produce for the first probe only. We can repeat for other probes by altering the index of `subset`. The `gender` vector is the same for every line of code.
-
-***N.B. we haven't discussed looping in R yet, so here is the long-hand way to produce these plots***
-
-```{r}
-par(mfrow=c(2,4))
-boxplot(subset[1,]~gender,las=2)
-boxplot(subset[2,]~gender,las=2)
-boxplot(subset[3,]~gender,las=2)
-boxplot(subset[4,]~gender,las=2)
-boxplot(subset[5,]~gender,las=2)
-boxplot(subset[6,]~gender,las=2)
-boxplot(subset[7,]~gender,las=2)
-boxplot(subset[8,]~gender,las=2)
-```
 
 The boxplot provides a nice visualisation of the difference between the groups of interest. For a quick-and-dirty assessment of whether this difference is statistically signficant we could use the standard `t.test` function. 
 
@@ -444,23 +401,6 @@ If we wanted to query a particular gene in our dataset and know if it exhibits a
 - Find which column in the metadata contains the condition of interest
 - Make a boxplot with the expression values of the genes as the `x` variable, and biological condition as the `y` variable
 
-```{r}
-remotefile <- 'ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE18nnn/GSE18088/matrix/GSE18088_series_matrix.txt.gz'
-destfile <- "data/GSE18088_series_matrix.txt.gz"
-if(!file.exists(destfile)) download.file(remotefile, destfile)
-cohort <- getGEO(filename="data/GSE18088_series_matrix.txt.gz")
-
-
-
-
-```
-
-
-
-
-
-
-
 # Appendix
 
 ## Example: Extra manipulation of the clinical data
@@ -471,11 +411,6 @@ Q. What is the age distribution of the samples?
 
 ******
 
-```{r echo=FALSE}
-clinvars <- pd[,10:16]
-clinvars$characteristics_ch1.4 <- as.numeric(gsub("age at diagnosis, years: ","",clinvars$characteristics_ch1.4))
-hist(clinvars$characteristics_ch1.4)
-```
 
 This is trickier without extra manipulation of the data. R supports various string-cleaning operations such as substituting text, trimming etc. A commonly-used function is `gsub` (`?gsub`) which replaces a given *pattern* with a *replacement* string for every element in a character vector. In this case, we want to replace `age at diagnosis, years: ` with the blank string `""`. The R code is thus;
 

@@ -49,7 +49,7 @@ boxplot(exprs(colonData),outline=FALSE)
 A first step in the analysis of microarray data is often to remove any uniformative probes.
 We can do this because typically only 50% of probes genes will be expressed, and even fewer
 than this will be differentially expressed. Including such non-informative genes in visualisa-
-tion will obscure any biological differences that exist. As we saw yesterday, the `genefilter` package contains a suite
+tion will obscure any biological differences that exist. As we mentioned yesterday, the `genefilter` package contains a suite
 of tools for the filtering of microarray data. The `varFilter` function allows probes with low-
 variance to be removed from the dataset. The metric using to decide which probes to remove
 is the Inter-Quartile Range (IQR), and by default half of the probes are removed. Both the
@@ -837,7 +837,7 @@ annotation(transbig)
 
 If we want any classifers to be reproducible and applicable to other datasets, it is sensible
 to exclude probes that do not have sufficient annotation from the analysis. For this, we can
-use the genefilter package as before. The nsFilter function performs this annotation-based
+use the genefilter package as before. The `nsFilter` function performs this annotation-based
 filtering as well as variance filtering. The output of the function includes details about how
 many probes were removed at each stage of the filtering.
 
