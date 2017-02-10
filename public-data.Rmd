@@ -114,7 +114,7 @@ The ***arrayQualityMetrics*** package can automatically-generate a variety of QA
 ******
 ### (Optional) Generate an arrayQualityMetrics report for the dataset. Do any arrays seem to be poor quality?
 
-```{r message=FALSE,cache=TRUE,warning=FALSE}
+```{r message=FALSE,cache=TRUE,warning=FALSE,eval=FALSE}
 library(arrayQualityMetrics)
 arrayQualityMetrics(mydata, force=TRUE)
 ```
@@ -320,6 +320,7 @@ As we did with the gene annotation in the previous example, we can save the meta
 ```{r}
 pd <- pData(cohort)
 View(pd)
+colnames(pd)
 ```
 
 The interesting columns tend to be in columns starting "characteristics_"
@@ -371,6 +372,7 @@ Exercise:
 
 - Produce a boxplot to see if the first probe that targets XIST shows and different between males and females
     + the expression values for the first probe can be found in `subset[1,]`
+    
 *****
 
 ```{r }
@@ -461,28 +463,28 @@ Example from the Bioconductor course in [Montevideo, Uruguay](http://bioconducto
 
 We can also download supplementary files from GEO. In the case of Affymetrix arrays, this may include the *.CEL* files
 
-```{r cache=TRUE}
+```{r cache=TRUE,eval=FALSE}
 x = getGEOSuppFiles("GSE20986")
 x
 ```
 
 The supplementary file comes as a *tar* archive, which we need to extract to get the individual cel files.
 
-```{r cache=TRUE}
+```{r cache=TRUE,eval=FALSE}
 untar("GSE20986/GSE20986_RAW.tar", exdir = "suppdata")
 list.files("suppdata/")
 ```
 
 Each cel file is zipped, so we unzip with *gunzip*.
 
-```{r cache=TRUE}
+```{r cache=TRUE,eval=FALSE}
 cels = list.files("suppdata/", pattern = "[gz]")
 sapply(paste("suppdata", cels, sep = "/"), gunzip)
 ```
 
 We can now proceed as with the Affymetrix workflow.
  
-```{r cache=TRUE}
+```{r cache=TRUE,eval=FALSE}
 library(affy)
 raw <- ReadAffy(celfile.path = "suppdata/")
 raw
@@ -493,20 +495,20 @@ boxplot(raw)
 
 The ArrayExpress vignette has various examples of importing data from the ***ArrayExpress*** repository into R. Similar to `getGEO` from `GEOquery`, the `getAE` function can do the import if the accession number is known. If we want just normalised data, we set an argument `type=processed`. 
 
-```{r cache=TRUE}
+```{r cache=TRUE,eval=FALSE}
 library(ArrayExpress)
-mydata <- getAE("E-GEOD-69017",type="processed")
-mydata
+aeData <- getAE("E-GEOD-69017",type="processed")
+aeData
 ```
 
 Alternatively, we can get the full dataset (including raw cel files) with `type=full`.
-```{r cache=TRUE}
+```{r cache=TRUE,eval=FALSE}
 rawdata <- getAE("E-GEOD-69017",type="full")
 ```
 
 We can process the *cel* files using the Affymetrix workflow, or `ArrayExpress` can process them for us.
 
-```{r cache=TRUE}
+```{r cache=TRUE,eval=FALSE}
 procdata <- ae2bioc(rawdata)
 ```
 

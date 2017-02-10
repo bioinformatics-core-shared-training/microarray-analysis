@@ -8,10 +8,6 @@ output:
     toc_float: yes
 ---
 
-```{r echo=FALSE,message=FALSE}
-library(GEOquery)
-library(limma)
-```
 
 # Description
 
@@ -21,7 +17,7 @@ The tutorial covers the application of a number of exploratory analysis techniqu
     + and making a heatmap
 - Principal Components Analysis
 - Classification
-
+- Survival
 
 
 # Data Pre-processing
@@ -37,7 +33,7 @@ colonData <- getGEO(filename=filenm)
 colonData
 ```
 
-We will log$_2$ transform the expression data
+We will log$_2$ transform the expression data to put on a more convenient scale for analysis
 
 ```{r}
 exprs (colonData) <- log2 (exprs(colonData))
@@ -173,7 +169,7 @@ d
 
 - The more common use of clustering is to cluster the columns (*samples*)
 - To do this, we have to *transpose* the matrix; using the function `t`
-- Note that the matrix has some values that appear to be missing
+- Note that the output matrix has some values that appear to be missing
     + why do you think that might be?
     
 ```{r}
@@ -205,12 +201,6 @@ cor(myMatrix)
 - Clustering algorithms will expect input in distance matrix form
 - We can convert using `as.dist`
     + recall that various `as.` functions exist to convert between various types of data. e.g. `as.numeric`, `as.character` etc
-
-```{r}
-corMat <- as.dist(cor(myMatrix))
-corMat
-```
-
 - Two samples with a *higher correlation* values means *more similar*
 - ...so the *distance* between is *less*
     + `abs` will calculate the absolute value
@@ -310,7 +300,7 @@ plot(clust)
 
 
 
-- We can change the name of the method
+- We can change the name of the method used to construct the clusters
 
 
 ```{r}
@@ -344,9 +334,8 @@ The default plotting for a dendrogram labels the "leaves" with the column names 
 ```{r}
 groups <- c(rep("Group1", 5),rep("Group2", 5))
 groups
-par(mfrow=c(1,2))
+
 plot(clust,labels=groups)
-plot(clust.ward)
 
 ```
 
@@ -374,16 +363,34 @@ The `WGCNA` package in Bioconductor provides methods for finding clusters of cor
 library(WGCNA)
 ```
 
+We need to create a vector of colours; one for each sample in our dataset
+
+- we already know how to extract the sample group information from the metadata
+- we can start by creating a vector containing just one colour name
+    + e.g. using the `rep` function
+    + then replace the entries corresponding to a tumour with a different value
+
+```{r}
+SampleGroup <- pData(colonData)$source_name_ch1
+SampleGroup
+groupColours <- rep("yellow",length(SampleGroup))
+groupColours[SampleGroup == "tumor"] <- "blue"
+groupColours
+```
+
 
 ```{r}
 clust.euclid = hclust(euc.dist)
-clust.cor = hclust (cor.dist)
-SampleGroup <- pData(colonData)$source_name_ch1
-groupColours <- as.factor(SampleGroup)
-levels(groupColours) <- c ("yellow" , "blue")
 plotDendroAndColors(clust.euclid,colors=groupColours)
-
 ```
+
+Alternatively, one might re-set the *levels* of the vector to be the colours we want
+
+```{r}
+groupColours <- SampleGroup
+levels(groupColours) <- c("yellow","blue")
+```
+
 
 
 
@@ -450,7 +457,7 @@ geneVar[2]
 length(geneVar)
 ```
 
-Next we can select which genes have the highest variance (say the top 100+)
+Next we can select which genes have the highest variance (say the top 100)
 
 ```{r}
 highVarGenes = order (geneVar, decreasing = TRUE )[1:100]
@@ -458,37 +465,38 @@ highVarGenes = order (geneVar, decreasing = TRUE )[1:100]
 
 - A basic heatmap can now be constructed by selecting the appropriate rows from the expression matrix
     + the `heatmap` function expects a `matrix` object, so we have to convert
-
+    + as we will see it can be customised in lots of ways
+    + `labCol` allows us to label the columns in the plot (default is to use the column names from the original matrix used for clustering)
+    
 ```{r}
-heatmap (as.matrix(exprs(colonData)[highVarGenes, ]))
+heatmap (as.matrix(exprs(colonData)[highVarGenes, ]),labCol = SampleGroup)
 ```
+
+******
+Exercise:
+
+- Does the clustering of samples look correct?
+    + are there any issues you can spot?
+    
+******
 
 ## Customising the heatmap
 
 From this plot we can already to discern patterns in the data
 
-- However, the rows are named according to the row names in the expression matrix
-    + which in this case are manufacturer identifiers and do not help the interpretation
-    + also, we have sample names without any information of the sample groupings.
-- The column labels can be changed by specifying the `labCol` argument    
-    
-    
-    
-```{r}
-heatmap (as.matrix(exprs(colonData)[highVarGenes, ]),
-         labCol = SampleGroup)
-```
+In a similar way to adding colours to a dendrogram (with `plotDendroAndColors`), we can add a colour bar underneath the sample dendrogram in the heatmap
 
-In a similar way to adding colours to a dendrogram
+- the argument to look for is `ColSideColors`
+    + only one band of colour is supported though
 
 ```{r}
-sampleColours <- matrix(nrow=length(SampleGroup),ncol=1)
-sampleColours[,1] <- as.character(groupColours)
 heatmap (as.matrix(exprs(colonData)[highVarGenes, ]),
          labCol = SampleGroup,
-         ColSideColors = sampleColours)
+         ColSideColors = as.character(groupColours))
 
 ```
+- However, the rows are named according to the row names in the expression matrix
+    + which in this case are manufacturer identifiers and do not help the interpretation
 
 
 ******
@@ -509,6 +517,7 @@ View(features)
 
 ## Your answer here ##
 
+
 ```
 
 
@@ -522,6 +531,7 @@ heatmap (as.matrix(exprs(colonData)[highVarGenes, ]),
          labCol = SampleGroup , Colv=NA)
 ```
 
+In this plot we set the column order according to the Sample Group
 ```{r}
 heatmap (as.matrix(exprs(colonData)[highVarGenes, order(SampleGroup)]),
          labCol = SampleGroup[order(SampleGroup)], Colv = NA)
@@ -587,6 +597,42 @@ We can turn-off the column density if we wish.
 ```{r}
 heatmap.2 (as.matrix(exprs(colonData)[highVarGenes, ]) ,
   ColSideColors = as.character(groupColours) , col=hmcol,trace="none")
+```
+## (Extra) What is the correct number of clusters?
+
+A *Silhouette plot* can be used to choose the optimal number of clusters. For each sample, we calculate a value that quantifies how well it 'fits' the cluster that it has been assigned to. If the value is around 1, then the sample closely fits other samples in the same cluster. However, if the value is around 0 the sample could belong to another cluster. In the silhouette plot, the values for each cluster are plotted together and ordered from largest to smallest. The number of samples belonging to each group is also displayed. 
+
+The `silhouette` function is used to calculate this measure, and requires the output from a clustering method and the corresponding distance matrix.
+
+```{r}
+silhouette(cutree(clust.cor, k = 2),cor.dist)
+```
+
+
+
+```{r fig.width=12}
+par(mfrow=c(2,2))
+plot(silhouette(cutree(clust.cor, k = 2), cor.dist), col = "red", main = paste("k=", 2))
+plot(silhouette(cutree(clust.cor, k = 3), cor.dist), col = "red", main = paste("k=", 3))
+plot(silhouette(cutree(clust.cor, k = 4), cor.dist), col = "red", main = paste("k=", 4))
+plot(silhouette(cutree(clust.cor, k = 5), cor.dist), col = "red", main = paste("k=", 5))
+```
+
+The `pvclust` package is also able to provide some assessment on whether the clusters you get are significant or not.
+
+- `install.packages(pvclust)`
+
+- If we have prior knowledge (as we do for this dataset) we might be tempted to use a supervised method that takes the number of expected clusters into account
+    + we can compare to the what we obtain from an unsupervised method
+    + more on this later, but here is a taster of what such supervised methods can do
+
+```{r}
+library(cluster)
+supervised.clus <- pam(euc.dist,k=2)
+clusplot(supervised.clus)
+supervised.clus$clustering
+table(supervised.clus$clustering,SampleGroup)
+
 ```
 
 
@@ -730,7 +776,7 @@ plot(pca$x[,1],pca$x[,2],
 
 ### Digression about ggplot2
 
-The `ggplot2` package was actually used to create the plots.
+The `ggplot2` package was actually used to create the plots above.
 
 - Beyond the scope of the course, but you should check out our [Intermediate R](http://bioinformatics-core-shared-training.github.io/r-intermediate/) course for more details
 - Essentially, it allows us to map between the variables in our data and the characteristics of the plot
@@ -803,22 +849,26 @@ We might also add a legend to explain the different colours.
 plot(pca.geneExpression$x[,1],pca.geneExpression$x[,2],
      pch=16,col=as.character(groupColours))
 legend("bottomright",fill=c("blue","yellow"),legend=c("tumour","normal"))
-Patients <- pd$characteristics_ch1.1
-text(pca.geneExpression$x[,1],pca.geneExpression$x[,2]-0.01,labels = Patients)
+
+text(pca.geneExpression$x[,1],pca.geneExpression$x[,2]-0.01,labels = pd$geo_accession)
 ```
 
 Happily, the first component seems to separate the tumours from normals
 
 - We can also see this with a boxplot
-
+- To find what the other components relate to, we would have to use other information in the metadata
+    + there doesn't seem to be anything useful though
+    + we should try and capture as much metadata as possible; batch, age of patient, tumour purity...
+    
 ```{r}
 boxplot(pca.geneExpression$x[,1] ~ SampleGroup)
-View(pd)
 ```
+
+
 
 # Classification
 
-The Bioconductor project has a collection of example datasets. Often these are used as examples to illustrate a particular package or functionality, or to accompany the analysis presented in a publication. For example, several datasets are presented to accompany the genefu
+The Bioconductor project has a collection of example datasets. Often these are used as examples to illustrate a particular package or functionality, or to accompany the analysis presented in a publication. For example, several datasets are presented to accompany the `genefu`
 package which has functions useful for the classification of breast cancer patients based on
 expression profiles.
 An experimental dataset can be installed and loaded as with any other Bioconductor package. The data itself is saved as an object in the package. You will need to see the documentation for the package to find out the relevant object name. The full list of datasets available
@@ -881,7 +931,7 @@ which shows how the error changes with the number of genes. In the plot produced
 function there are two panels; the top one shows the errors in the whole dataset and the bottom one considers each class separately. In each panel, the x axis corresponds to the thresh-
 old (and number of genes at each threshold) whereas the y-axis is the number of misclassifications.
 
-```{r}
+```{r fig.width=12}
 model.cv <- pamr.cv(model , train.dat , nfold = 10)
 model.cv
 pamr.plotcv(model.cv)

@@ -49,10 +49,9 @@ Inspect the clinical variables
 
 ******
 ```{r echo=FALSE}
-pData(gse)[1:5,1:8]
-pd <- pData(gse)
-View(pd)
-SampleGroup <- pd$source_name_ch1
+
+## Your answer here ##
+
 ```
 
 
@@ -69,6 +68,7 @@ SampleGroup <- pd$source_name_ch1
 For completeness, we note that t-statistics and corresponding p-values can be generated quickly using the `genefilter` package.
 
 ```{r}
+pd <- pData(gse)
 SampleGroup <- pd$source_name_ch1
 library(genefilter)
 destats <- rowttests(exprs(gse),fac=SampleGroup)
@@ -229,52 +229,50 @@ testResults[which(testResults$Symbol %in% mylist),]
 ```
 
 
-## Further filtering and ordering
+# Further filtering and ordering
 
 ******
-## Q. Create a data frame containing genes with i) adjusted p-value < 0.05 ii) log-fold change > 1. How many genes does this contain?
-## Q. Now order this data frame according to chromosome
+
+- Q. Create a data frame containing genes with i) adjusted p-value < 0.05 ii) log-fold change > 1. How many genes does this contain?
+- Q. Now order this data frame according to chromosome
 
 ******
 
 ```{r echo=FALSE}
-filtResults <- testResults[testResults$Chromosome != "" & testResults$adj.P.Val < 0.05 & testResults$logFC < 1,]
-dim(filtResults)
-head(filtResults)
 
-orderedHits <- testResults[order(testResults$Chromosome),]
-head(orderedHits)
+## Your Answer here ##
+
 ```
 
 
 
 
-## Improved analysis: Doing a paired analysis
+# Improved analysis: Doing a paired analysis
 
 ******
-## Q.  What would the design matrix look like to incorporate patient ID into the model
-## Q. Create this model using the `model.matrix` function
+
+- Q. What would the design matrix look like to incorporate patient ID into the model 
+- Q. Create this model using the `model.matrix` function
+
 ******
 
 
 ```{r echo=FALSE}
-Patient <- pd$characteristics_ch1.1
-Patient <- gsub("patient: ","",Patient)
-design.better <- model.matrix(~0+Patient+SampleGroup)
+
+## Your answer here ##
+
 ```
 
 ******
-## Q. Proceed to fit your model to the data
-## Q. How many genes are DE? How does this compare to the previous model?
+
+- Q. Proceed to fit your model to the data
+- Q. How many genes are DE? How does this compare to the previous model?
+
 ******
 
 ```{r}
-fit.better <- lmFit(exprs(gse.expFilt), design.better)
-fit2.better <- eBayes(fit.better)
-fit2.better$genes <- anno
-topTable(fit2.better,coef=10)
-table(decideTests(fit2.better[,10]))
-sum(abs(decideTests(fit2.better[,10]))==1)
+
+## Your answer here ##
 
 ```
 
@@ -325,7 +323,6 @@ topTable(fit2, coef=2)
 
 ```
 
-```
 
 ******
 ## Q. Which one do you prefer? Why?
