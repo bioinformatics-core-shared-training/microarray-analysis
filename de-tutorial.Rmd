@@ -7,7 +7,7 @@ output: html_document
 
 # Importing the data
 
-The data from this experiment comprises nine paired tumor/normal colon tissues on Illumina HT12\_v3 gene expression Beadchips. These data were generated to inform a comparison of technologies for microRNA profiling. However, we will only use the mRNA data here. 
+The data from this experiment comprises nine paired tumor/normal colon tissues on Illumina HT12\_v3 gene expression Beadchips. These data were generated to inform a comparison of technologies for microRNA profiling. However, we will only use the mRNA data here.
 
 
 ```{r echo=FALSE,message=FALSE}
@@ -66,7 +66,7 @@ SampleGroup <- pd$source_name_ch1
 
 # Simple t-tests
 
-For completeness, we note that t-statistics and corresponding p-values can be generated quickly using the `genefilter` package. 
+For completeness, we note that t-statistics and corresponding p-values can be generated quickly using the `genefilter` package.
 
 ```{r}
 SampleGroup <- pd$source_name_ch1
@@ -191,7 +191,7 @@ The "*Volcano Plot*" function is a common way of visualising the results of a DE
 volcanoplot(fit2)
 ```
 
-The function also has options to highlight the postions of the top N genes from the test. 
+The function also has options to highlight the postions of the top N genes from the test.
 
 ```{r}
 volcanoplot(fit2,highlight=10,names = fit2$genes$"Symbol")
@@ -206,7 +206,7 @@ write.fit(fit2, file = "de-results.txt",adjust="BH")
 
 # Getting the results for a particular gene
 
-The `topTable` function by default only prints the top 10 DE genes. However, by changing the arguments we can make it print the statistics for all the genes that we test. 
+The `topTable` function by default only prints the top 10 DE genes. However, by changing the arguments we can make it print the statistics for all the genes that we test.
 
 ```{r}
 testResults <- topTable(fit2, number=nrow(fit2))
@@ -296,8 +296,12 @@ design2 <- model.matrix(~ER*Time)
 design2
 
 ```
+# Reading and normalising the data
+
+We read the data and then apply rma normalisation. What are the steps?
 
 ```{r}
+
 raw <-ReadAffy(celfile.path = "estrogen", filenames=rownames(pData(pd)),phenoData = pd)
 raw
 
@@ -305,4 +309,28 @@ eset <- rma(raw)
 eset
 
 ```
+# Fitting the models
 
+Fit the model with and without interaction.
+
+```{r}
+library(limma)
+fit1 <- lmFit(eset, design)
+fit1 <- eBayes(fit1)
+topTable(fit1, coef=2)
+
+fit2 <- lmFit(eset, design2)
+fit2 <- eBayes(fit2)
+topTable(fit2, coef=2)
+
+```
+
+```
+
+******
+## Q. Which one do you prefer? Why?
+******
+
+```{r echo=FALSE}
+table(decideTests(fit2)[,4])
+```
