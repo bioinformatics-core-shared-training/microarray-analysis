@@ -22,7 +22,7 @@ In this section we move towards discovering if our results are ***biologically s
 
 There are two different approaches one might use, and we will cover the theory behind both
 
-- There is a lso a bunch of websites for doing the tests
+- There is also a bunch of websites for doing the tests
     + we will show how they are done in Bioconductor so the theory is clear
 - We will assume we have done a differential-expression analysis, but the same techniques can be used for other situations when we have a gene list
     + ChIP-seq
@@ -32,7 +32,7 @@ There are two different approaches one might use, and we will cover the theory b
 ## Theory Part I: Over-representation analysis
 
 - "Threshold-based": require defintion of a statistical threshold to define list of genes to test (e.g. FDR < 0.01)
-- Hypergeometric test, Fisher's Exact test is used.
+- Hypergeometric test or Fisher's Exact test generally used.
 
 The question we are asking here is;
 
@@ -174,7 +174,9 @@ half of these have enough detailed information to useful for a GO analysis. Ther
 
 - This can be performed automatically using the `nsFilter` function
 - First we have to tell the function we are dealing with `illuminaHumanv3` data
-
+- The output of `nsFilter` contains several components
+    + we want just the expression set of filtered rows, so we need to select this
+    
 ```{r}
 library(genefilter)
 annotation(colonData) <- "illuminaHumanv3"

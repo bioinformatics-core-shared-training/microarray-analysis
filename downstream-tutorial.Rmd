@@ -19,6 +19,7 @@ The tutorial covers the application of a number of exploratory analysis techniqu
 - Classification
 - Survival
 
+However, the techniques presented could be used on other types of data where you have genomic-observations in rows and samples in columns
 
 # Data Pre-processing
 
