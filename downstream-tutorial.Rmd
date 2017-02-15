@@ -159,7 +159,8 @@ head(myMatrix)
 
 - The default is to compute distances from the *rows* of the matrix
     + i.e. which would normally be the genes we are measuring
-
+- Note that the output matrix has some values that appear to be missing
+    + why do you think that might be?
 
 ```{r eval=FALSE}
 d <- dist(myMatrix)
@@ -167,12 +168,9 @@ d
 ```
 
 
-
 - The more common use of clustering is to cluster the columns (*samples*)
 - To do this, we have to *transpose* the matrix; using the function `t`
-- Note that the output matrix has some values that appear to be missing
-    + why do you think that might be?
-    
+
 ```{r}
 d <- dist(t(myMatrix))
 d
@@ -184,6 +182,7 @@ d
     + as always, check the help page for full list of options `?dist`
 
 ```{r}
+?dist
 d.man <- dist(t(myMatrix),method="manhattan")
 d.man
 ```
@@ -231,13 +230,7 @@ euc.dist <- dist (t(exprs(varFiltered)))
 euc.dist
 ```
 
-For gene-expression data, it is common to use correlation as a distance metric rather than
-the Euclidean. As we saw above, the `cor` function can be used to calculate the correlation of columns in a matrix. Each row
-(or column) in the resulting matrix is the correlation of that sample with all other samples
-in the dataset. The matrix is symmetrical and we can transform this into a distance matrix
-by first subtracting 1 from the correlation matrix. Hence, samples with a higher correlation
-have a smaller 'distance'.
-
+Or, if we wanted measures of correlation, we use the `cor` function as above
 
 ```{r}
 corMat <- cor(exprs(varFiltered))
@@ -245,14 +238,8 @@ corMat
 cor.dist <- as.dist(1 - corMat)
 ```
 
-The values given by the `cor` function can be either positive or negative, depending on whether two samples are positively or negatively correlated. However, for our distance matrix to contain only values in the range 0 to 1. In which case we would need to use the *absolute* values from the correlation matrix before converting to distances.
 
-```{r}
-cor.dist <- as.dist(1 - abs(corMat))
-```
-
-
-We are now ready to use a clustering method.
+We are now ready to use a clustering algorithm
 
 
 ## Hierachical methods for clustering
@@ -273,7 +260,7 @@ We are now ready to use a clustering method.
 
 
 
-- Dendrograms are good visual guides, but *arbitrary*
+- Dendrograms are good visual guides, but the x-axis is *arbitrary*
 - Nodes can be reordered
     + Closer on dendrogram $\ne$ more similar
 
@@ -291,6 +278,14 @@ clust <- hclust(d)
 clust
 ```
 
+The summary provided when we print the object doesn't give much useful information
+
+- we can access particular parts of the output with a `$`
+
+```{r}
+names(clust)
+clust$order
+```
 
 
 - The standard plotting function has been extended to visualise the result of the clustering
@@ -333,10 +328,8 @@ The default plotting for a dendrogram labels the "leaves" with the column names 
     + the vector must be in the same order as the columns in the matrix that you did clustering on
 
 ```{r}
-groups <- c(rep("Group1", 5),rep("Group2", 5))
-groups
 
-plot(clust,labels=groups)
+plot(clust,labels=paste("Sample", 1:10))
 
 ```
 
@@ -406,11 +399,11 @@ labels of samples that are belong to the same group when the dendrogram is cut a
 
 ```{r}
 library (cluster)
-plot(clust.cor)
-abline (h = 0.12, col = " red ")
-cutree (clust.cor , h = 0.12)
-cutree (clust.cor , k = 2)
-table (cutree(clust.cor , k = 3) , SampleGroup)
+plot(clust.euclid)
+abline (h = 120, col = " red ")
+cutree (clust.euclid , h =120)
+cutree (clust.euclid , k = 3)
+table (cutree(clust.euclid , k = 3) , SampleGroup)
 ```
 
 
@@ -468,6 +461,7 @@ highVarGenes = order (geneVar, decreasing = TRUE )[1:100]
     + the `heatmap` function expects a `matrix` object, so we have to convert
     + as we will see it can be customised in lots of ways
     + `labCol` allows us to label the columns in the plot (default is to use the column names from the original matrix used for clustering)
+    
     
 ```{r}
 heatmap (as.matrix(exprs(colonData)[highVarGenes, ]),labCol = SampleGroup)
@@ -542,7 +536,7 @@ heatmap (as.matrix(exprs(colonData)[highVarGenes, order(SampleGroup)]),
 Alternatively, a pre-calculated dendrogram could be used.
 
 ```{r}
-clus.ward <- hclust (cor.dist , method = "ward")
+clus.ward <- hclust (euc.dist , method = "ward")
 heatmap (as.matrix(exprs(colonData)[highVarGenes, ]) ,
          Colv = as.dendrogram(clus.ward) , labCol = SampleGroup )
 
@@ -606,17 +600,17 @@ A *Silhouette plot* can be used to choose the optimal number of clusters. For ea
 The `silhouette` function is used to calculate this measure, and requires the output from a clustering method and the corresponding distance matrix.
 
 ```{r}
-silhouette(cutree(clust.cor, k = 2),cor.dist)
+silhouette(cutree(clust.euclid, k = 2),euc.dist)
 ```
 
 
 
 ```{r fig.width=12}
 par(mfrow=c(2,2))
-plot(silhouette(cutree(clust.cor, k = 2), cor.dist), col = "red", main = paste("k=", 2))
-plot(silhouette(cutree(clust.cor, k = 3), cor.dist), col = "red", main = paste("k=", 3))
-plot(silhouette(cutree(clust.cor, k = 4), cor.dist), col = "red", main = paste("k=", 4))
-plot(silhouette(cutree(clust.cor, k = 5), cor.dist), col = "red", main = paste("k=", 5))
+plot(silhouette(cutree(clust.euclid, k = 2), euc.dist), col = "red", main = paste("k=", 2))
+plot(silhouette(cutree(clust.euclid, k = 3), euc.dist), col = "red", main = paste("k=", 3))
+plot(silhouette(cutree(clust.euclid, k = 4), euc.dist), col = "red", main = paste("k=", 4))
+plot(silhouette(cutree(clust.euclid, k = 5), euc.dist), col = "red", main = paste("k=", 5))
 ```
 
 The `pvclust` package is also able to provide some assessment on whether the clusters you get are significant or not.
@@ -659,13 +653,14 @@ The data: 86 malt whiskies scored for 12 different taste categories
 
 - Q. Can we find which whiskies have a similar taste profile?
 - Q. What are the factors that determine the taste profile?
+- Q. What other types of whisky are similar to my favourite?
 
 ```{r echo=FALSE}
 download.file("https://www.mathstat.strath.ac.uk/outreach/nessie/datasets/whiskies.txt",destfile = "whiskies.txt")
 whisky <- read.csv("whiskies.txt")
 scores <- whisky[,c(3:14)]
 rownames(scores) <- whisky$Distillery
-head(scores,n=3)
+scores
 ```
 
 ## What does PCA tell us for these data?
