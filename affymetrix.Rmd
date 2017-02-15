@@ -54,6 +54,17 @@ The cel files for the example experiement are stored in the `estrogen` directory
 
 The first stage is to read the *targets* file. In Bioconductor we often use a targets file to define the files corresponding to the raw data for the experiment and which sample groups they belong to. Such a file can be created in a spreadsheet, or text editor, and usually saved as a tab-delimited file. We can have as many columns in the file as we see fit, and one row for each hybridisation. The sample group information is propogated through the analysis and incorporated in the quality assessment and eventually differential expression. We refer to this as the "phenotype data" for the experiment, or sometimes the *"metadata"*.
 
+### Packages and data 
+
+If you did not install the `affy` Bioconductor package, you will need to do so now:-
+
+```{r eval=FALSE}
+source("http://www.bioconductor.org/biocLite.R")
+biocLite("affy")
+```
+
+The data for the practical can be found in the [course zip file](https://rawgit.com/bioinformatics-core-shared-training/microarray-analysis/master/Course_Data.zip)
+
 ```{r}
 library(affy)
 targetsFile <- "estrogen/estrogen.txt"
@@ -232,7 +243,7 @@ Procedure;
 
 ## Non-linear effects
 
-As we saw before The *MA-plot* is commonly-used in microarray analysis to commonly-used to visualise differences between pairs of arrays. These plots can reveal non-linear effects and motivate more-sophisticated methods.
+As we saw before The *MA-plot* is commonly-used in microarray analysis to commonly-used to visualise differences between pairs of arrays. These plots can reveal non-linear effects and motivate more-sophisticated methods. On older array technologies, it was typical to see a banana-shaped trend on these plots.
 
 (***not our dataset***)
 
@@ -423,7 +434,7 @@ Clustering techniques and PCA that we will meet later in the course can also inf
 ![](images/affy-pca.png)
 
 
-## Automated QC
+## Automated production of QC plots
 
 The `arrayQualityMetrics` package is able to produce QA plots from set of cel files, or a normalised dataset.
 
@@ -432,6 +443,14 @@ library(arrayQualityMetrics)
 arrayQualityMetrics(eset)
 ```
 
+### Thoughts on Quality Assessment 
+
+- It is difficult to come up with definitive rules about when to reject a sample from the analysis
+- Try and keep as much information from the lab
+    + RIN (RNA Integrity Numbers), tumour composition
+- If we try and reject samples for looking different, we might bias our results and miss interesting findings
+- If the majority of our samples are poor quality, the better quality ones might stand-out as outliers!
+- Try and collect as many samples / replicates as possible to be tolerant to variation
 
 ## Summary
 
@@ -444,4 +463,6 @@ arrayQualityMetrics(eset)
     + `rma` (and variants thereof) is most-popular
 - Affy data can be summarised into a common Bioconductor object-type
     + The "`ExpressionSet`"
-
+- The `ExpressionSet`, or derivaties thereof, is used throughout Bioconductor to represent all types of high-throughput data
+    + methylation, ChIP, RNA-seq
+    + basically anything where you can have some kind of genomic measure as rows, and samples as columns
