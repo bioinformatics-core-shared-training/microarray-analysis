@@ -105,6 +105,14 @@ The first diagnostic plot we will meet is the "[boxplot](https://en.wikipedia.or
 - The median is represented by a horizontal line
 - The *inter-quartile range* (IQR) is the difference between the 75th and 25th percentiles
 
+Here, we draw a boxplot to compare two distributions; `x` with a mean of 0 and standard deviation of 1, and `y` with a mean of 2 and standard deviation of 4.
+
+```{r}
+x <- rnorm(100)
+y <- rnorm(100, mean = 2,sd=4)
+boxplot(x,y)
+```
+
 It is also common to draw whiskers that extend to 1.5 X the IQR from the lower and upper quartile. Any points outside this range can be represented by a dot.
 
 
@@ -357,7 +365,9 @@ library(limma)
 
 - Distributions of samples are expected to be the same
 - Majority of genes do not change between groups
-
+    + might be violated if you have samples that are dramatically altered
+    + e.g. low number of genes in a screening panel that are expected to change
+    
 ## Other normalisation procedures
 
 - loess or splines
