@@ -166,7 +166,7 @@ mva.pairs(pm(raw)[,5:8],plot.method="smoothScatter")
 
 
 ******
-### Based on all the plots you have generated, what would you conclude about the overall quality of this experiment? 
+Based on all the plots you have generated, what would you conclude about the overall quality of this experiment? 
 ******
 
 
@@ -179,6 +179,15 @@ the simplest fitting chip, and probe effects to the log$_2$ intensities within e
 an experiment in a robust way.
 The output is a matrix of residuals, or weights for each chip which can be used as an additional diagnostic; systematically high residuals across an entire array, or a large fraction of an array is indicative of an outlier array. The main use of this tool is in deciding whether or
 not to keep an array in the down-stream data analysis.
+
+### Relative Log Expression (RLE)
+
+The Relative Log Expression (RLE) values are computed by calculating for each probe-set the ratio between the expression of a probe-set and the median expression of this probe-set across all arrays of the experiment. It is assumed that most probe-sets are not changed across the arrays, so it is expected that these ratios are around 0 on a log scale. The boxplots presenting the distribution of these log-ratios should then be centered near 0 and have similar spread. Other behavior would be a sign of low quality.
+
+
+### Normalized Unscaled Standard Error (NUSE) 
+
+The Normalized Unscaled Standard Error (NUSE) is the individual probe error fitting the Probe-Level Model (the PLM models expression measures using a M-estimator robust regression). The NUSE values are standardized at the probe-set level across the arrays: median values for each probe-set are set to 1. The boxplots allow checking (1) if all distributions are centered near 1 (typically an array with a boxplot centered around 1.1 shows bad quality) and (2) if one array has globally higher spread of NUSE distribution than others, which may also be a sign of low quality.
 
 ```{r}
 library(affyPLM)

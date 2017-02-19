@@ -79,7 +79,7 @@ mydata[[1]]
 remotefile <- 'ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE1nnn/GSE1729/matrix/GSE1729_series_matrix.txt.gz'
 destfile <- "data/GSE1729_series_matrix.txt.gz"
 if(!file.exists(destfile)) download.file(remotefile, destfile)
-mydata <- getGEO(filename="data/GSE1729_series_matrix.txt.gz")
+mydata<- getGEO(filename="data/GSE1729_series_matrix.txt.gz")
 mydata
 ```
 
@@ -94,6 +94,8 @@ The structure of the `mydata` object should be quite familiar to you. The expres
 ```{r}
 exprs(mydata)[1:5,1:5]
 summary(exprs(mydata)[,1:5])
+mva.pairs(exprs(mydata)[,1:4],log.it = TRUE)
+pData(mydata)
 ```
 
 We can visualise the expression values for a particular gene by knowing which row of the expression matrix it is found in.
