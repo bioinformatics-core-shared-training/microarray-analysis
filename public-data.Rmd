@@ -94,8 +94,7 @@ The structure of the `mydata` object should be quite familiar to you. The expres
 ```{r}
 exprs(mydata)[1:5,1:5]
 summary(exprs(mydata)[,1:5])
-mva.pairs(exprs(mydata)[,1:4],log.it = TRUE)
-pData(mydata)
+
 ```
 
 We can visualise the expression values for a particular gene by knowing which row of the expression matrix it is found in.
@@ -109,6 +108,16 @@ As we have downloaded the processed and normalised data, there are limited optio
 ```{r}
 boxplot(log2(exprs(mydata)))
 ```
+******
+
+What other types of QA can be applied to these data?
+
+- Visualising the array images?
+- RLE and NUSE plots?
+- MA plots?
+- Clustering and PCA?
+
+******
 
 The ***arrayQualityMetrics*** package can automatically-generate a variety of QA plots. It incorporates clustering methods that we will explore in-depth later in the course. Such methods are extremely useful for verifying known relationships between sample groups.
 
@@ -187,7 +196,7 @@ Recall that a particular column from the feature matrix can be retrieved using t
 
 ```{r eval=FALSE}
 colnames(features)
-features$ID[1:10]
+
 ```
 
 
